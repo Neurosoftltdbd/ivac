@@ -1226,6 +1226,9 @@
         </style>
     `;
 
+
+
+
     // High Commission dropdown - Sylhet (4) is now default
     const highcomSelect = document.createElement('select');
     highcomSelect.innerHTML = `
@@ -1588,6 +1591,9 @@
     const panelButtons = document.createElement('div');
     panelButtons.id = 'ivac-smart-panel-buttons';
 
+    const loginRow = document.createElement('div');
+    loginRow.className = 'ivac-btn-row';
+
     // First row of buttons
     const firstRow = document.createElement('div');
     firstRow.className = 'ivac-btn-row';
@@ -1597,25 +1603,35 @@
     appSubmitBtn.className = 'ivac-panel-btn';
     appSubmitBtn.id = 'ivac-app-submit-btn';
     appSubmitBtn.textContent = 'App Info';
-    appSubmitBtn.addEventListener('click', function(e) {
+    appSubmitBtn.addEventListener('click', async function(e)  {
         if (!smartPanel.classList.contains('visible')) {
             e.stopPropagation();
             return;
         }
-        sendDataToServer();
+        await sendDataToServer();
     });
+
+    const loginForm = document.createElement('form');
+    loginForm.id = "ivac-login-form";
+    loginForm.innerHTML = `
+        <label for="ivac-username">Username:</label>
+        <input type="text" id="ivac-username" name="username" required><br>
+        <label for="ivac-password">Password:</label>
+        <input type="password" id="ivac-password" name="password" required><br>
+        `;
+    loginRow.appendChild(loginForm);
 
     // Personal Info button
     const personalSubmitBtn = document.createElement('button');
     personalSubmitBtn.className = 'ivac-panel-btn';
     personalSubmitBtn.id = 'ivac-personal-submit-btn';
     personalSubmitBtn.textContent = 'Per Info';
-    personalSubmitBtn.addEventListener('click', function(e) {
+    personalSubmitBtn.addEventListener('click', async function(e) {
         if (!smartPanel.classList.contains('visible')) {
             e.stopPropagation();
             return;
         }
-        submitPersonalInfo();
+        await submitPersonalInfo();
     });
 
     firstRow.appendChild(appSubmitBtn);
@@ -1725,12 +1741,12 @@
     resendOtpBtn.className = 'ivac-panel-btn';
     resendOtpBtn.id = 'ivac-resend-otp-btn';
     resendOtpBtn.textContent = 'Resend OTP';
-    resendOtpBtn.addEventListener('click', function(e) {
+    resendOtpBtn.addEventListener('click', async function(e) {
         if (!smartPanel.classList.contains('visible')) {
             e.stopPropagation();
             return;
         }
-        sendOTP(true);
+        await sendOTP(true);
     });
 
     fourthRow.appendChild(sendOtpBtn);
@@ -1868,6 +1884,7 @@
     panelButtons.appendChild(bottomSpacer);
 
     // Add all rows to panel
+    panelButtons.appendChild(loginRow);
     panelButtons.appendChild(firstRow);
     panelButtons.appendChild(secondRow);
     panelButtons.appendChild(thirdRow);
