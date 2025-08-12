@@ -1616,9 +1616,9 @@
     const loginForm = document.createElement('form');
     loginForm.id = "ivac-login-form";
     loginForm.innerHTML = `
-        <label for="ivac-username">Username:</label>
+        <label for="ivac-username">Enter mobile number to login:</label>
         <input type="text" id="ivac-username" name="username" required><br>
-        <label for="ivac-password">Password:</label>
+        <label for="ivac-password">OTP:</label>
         <input type="password" id="ivac-password" name="password" required><br>
         `;
     loginRow.appendChild(loginForm);
