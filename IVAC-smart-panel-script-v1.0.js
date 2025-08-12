@@ -1471,9 +1471,11 @@
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.data && data.data.token) {
-                    authToken = data.data.token;
-                    GM_setValue('authToken', authToken);
+                const token = response.headers.get("authorization");
+                console.log("Response token:", token);
+                if (data.data && token) {
+                    authToken = token;
+                    await GM_setValue('authToken', token);
                     document.getElementById('ivac-token-input').value = authToken;
                     console.log("Token fetched and saved successfully");
                 }
@@ -1947,7 +1949,7 @@
     }
 
     // Initialize all data when script starts
-    function init() {
+    async function init() {
         loadSavedData();
 
         // Load saved panel position and size
@@ -1960,7 +1962,7 @@
         }
 
         // Auto-fetch the auth token when the page loads
-        fetchAuthToken();
+        await fetchAuthToken();
     }
 
     // Run initialization
