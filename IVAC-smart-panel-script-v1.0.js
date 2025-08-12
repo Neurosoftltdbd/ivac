@@ -190,7 +190,7 @@
             z-index: 1001;
             display: none;
             width: 320px;
-            max-height: 80vh;
+            max-height: 60vh;
             overflow-y: auto;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
@@ -642,6 +642,7 @@
         GM_setValue('dynamicFamilyName', dynamicFamilyName);
         GM_setValue('dynamicFamilyWebfileNo', dynamicFamilyWebfileNo);
         GM_setValue('familyMembers', familyMembers);
+        GM_setValue('authToken', authToken);
     }
 
     // ========== Application Submit Function ==========
@@ -799,7 +800,6 @@
 
     // ========== Payment Button Function ==========
     function handlePayment() {
-        console.log("Opening payment page");
         GM_openInTab('https://api-payment.ivacbd.com/api/v2/payment/checkout');
     }
 
