@@ -13,7 +13,7 @@ app.get('/', (req, res) => {
     const key = req.query.key;
     // Only allow access if the key is exactly '12345'
     if (keyList.includes(key)) {
-        res.sendFile(path.join(__dirname, 'dist/index.js'));
+        res.sendFile(path.join(__dirname, 'IVAC.js'));
     } else {
         console.log('Access denied');
         res.status(403).send('<div style="width: 100%; height: 100vh; text-align: center; margin-top: 50px; font-size: 56px;">\Access denied\</div>');
