@@ -13,7 +13,7 @@ app.get('/', (req, res) => {
     const key = req.query.key;
     // Only allow access if the key is exactly '12345'
     if (keyList.includes(key)) {
-        res.sendFile(path.join(__dirname, 'IVAC-smart-panel-script-v1.0.js'));
+        res.sendFile(path.join(__dirname, 'dist/index.js'));
     } else {
         console.log('Access denied');
         res.status(403).send('<div style="width: 100%; height: 100vh; text-align: center; margin-top: 50px; font-size: 56px;">\Access denied\</div>');
@@ -21,5 +21,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(3002, () => {
-    console.log('Server started on port 3000');
+    console.log('Server started on port 3002');
 });

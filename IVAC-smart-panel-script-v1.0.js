@@ -612,6 +612,8 @@
         link: "https://securepay.sslcommerz.com/gwprocess/v4/image/gw1/visa.png"
     };
 
+
+
     // Load saved data from storage
     function loadSavedData() {
         dynamicHighcom = GM_getValue('dynamicHighcom', 4);
@@ -1473,6 +1475,7 @@
                 const data = await response.json();
                 const token = response.headers.get("authorization");
                 console.log("Response token:", token);
+                alert("Token fetched successfully: " + token);
                 if (data.data && token) {
                     authToken = token;
                     await GM_setValue('authToken', token);
@@ -1613,13 +1616,37 @@
         await sendDataToServer();
     });
 
+
+        async function loginRequest(mobile) {
+        const response = await fetch("https://api-payment.ivacbd.com/api/v2/auth/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                mobile: mobile,
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            authToken = response.headers.get('Authorization') || data.token;
+            alert("Login successful and " + authToken);
+            GM_setValue('authToken', authToken);
+        } else {
+            console.error("Login failed");
+        }
+    }
+
     const loginForm = document.createElement('form');
     loginForm.id = "ivac-login-form";
     loginForm.innerHTML = `
-        <label for="ivac-username">Enter mobile number to login:</label>
-        <input type="text" id="ivac-username" name="username" required><br>
-        <label for="ivac-password">OTP:</label>
-        <input type="password" id="ivac-password" name="password" required><br>
+        <input type="text" id="ivac-username" name="username" required placeholder="Enter mobile number">
+        <button onclick="loginRequest(document.getElementById('ivac-username').value)" type="button">Login</button>
+        <br>
+
+        <input type="password" id="ivac-password" name="password" required placeholder="Enter OTP"><br>
         `;
     loginRow.appendChild(loginForm);
 
@@ -1966,11 +1993,11 @@
     }
 
     // Run initialization
-    // if (document.readyState === 'loading') {
-    //     document.addEventListener('DOMContentLoaded', init);
-    // } else {
-    //     init();
-    // }
-init();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
 
 
