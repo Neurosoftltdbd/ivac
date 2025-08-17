@@ -14,7 +14,7 @@
 // @require      https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4
 // ==/UserScript==
 
-(function () {
+(async function () {
     'use strict';
 
     GM_addStyle(`
@@ -640,7 +640,7 @@
         email = GM_getValue('email_name', null);
         phone = GM_getValue('phone', null);
         familyName = GM_getValue('familyName', null);
-        familyWebFileId = GM_getValue('familyWebfileNo', null);
+        familyWebFileId = GM_getValue('familyWebFileNo', null);
         familyMembers = GM_getValue('familyMembers', []);
     }
 
@@ -656,12 +656,10 @@
         GM_setValue('email_name', email);
         GM_setValue('phone', phone);
         GM_setValue('familyName', familyName);
-        GM_setValue('familyWebfileNo', familyWebFileId);
+        GM_setValue('familyWebFileNo', familyWebFileId);
         GM_setValue('familyMembers', familyMembers);
         GM_setValue('authToken', authToken);
     }
-
-
 
 
     let selectHighCommission = document.getElementById("select-high-commission");
@@ -674,8 +672,6 @@
     let selectFullName = document.getElementById("input-full_name");
     let selectEmail = document.getElementById("input-email");
     let selectPhone = document.getElementById("input-phone");
-
-
 
 
     // ========== Application Submit Function ==========
@@ -909,7 +905,7 @@
                     "Authorization": `Bearer ${authToken}`,
                     "language": "en"
                 },
-                body: JSON.stringify({otp:otp}),
+                body: JSON.stringify({otp: otp}),
                 signal: controller.signal
             });
 
@@ -1226,16 +1222,6 @@
     // ==================== Modal and Input Functions ====================
 
 
-
-
-
-
-
-
-
-
-
-
     function updateFamilyInputs() {
         const count = parseInt(familyCount.value);
         familyInputsContainer.innerHTML = '';
@@ -1336,45 +1322,36 @@
     // Initialize IVAC centers
     updateIvacCenters(highCommission);
 
-    // Event listeners
-    highCommission.addEventListener('change', updateIvacCenters);
-    familyCount.addEventListener('change', updateFamilyInputs);
 
-
-    document.getElementById('ivac-modal-save').addEventListener('click', function () {
-        webFileId = selectWebFile.value || null;
-        familyCount = parseInt(selectFamilyCount.value) || 0;
-        highCommission = parseInt(selectHighCommission.value) || 4;
-        ivacId = parseInt(selectIvacCenter.value) || 4;
-        visaType = parseInt(selectVisaType.value);
-        visitPurpose = selectVisitPurpose.value;
-        fullName = selectFullName.value;
-        email = selectEmail.value;
-        phone = selectPhone.value;
-        familyName = showFamilyMemberData.querySelector('input').value || null;
-        familyWebFileId = selectWebFile.value ? selectWebFile.value.replace(/(.{6})$/, "A7C25") : null;
-
-        familyMembers = [];
-        const inputs = showFamilyMemberData.querySelectorAll('input');
-        inputs.forEach(input => {
-            const index = parseInt(input.dataset.index);
-            const type = input.dataset.type;
-            const value = input.value || null;
-
-            if (!familyMembers[index]) {
-                familyMembers[index] = {};
-            }
-            familyMembers[index][type] = value;
-        });
-
-        saveData();
-    });
-
-
-
-
-
-
+    // document.getElementById('ivac-modal-save').addEventListener('click', function () {
+    //     webFileId = selectWebFile.value || null;
+    //     familyCount = parseInt(selectFamilyCount.value) || 0;
+    //     highCommission = parseInt(selectHighCommission.value) || 4;
+    //     ivacId = parseInt(selectIvacCenter.value) || 4;
+    //     visaType = parseInt(selectVisaType.value);
+    //     visitPurpose = selectVisitPurpose.value;
+    //     fullName = selectFullName.value;
+    //     email = selectEmail.value;
+    //     phone = selectPhone.value;
+    //     familyName = showFamilyMemberData.querySelector('input').value || null;
+    //     familyWebFileId = selectWebFile.value ? selectWebFile.value.replace(/(.{6})$/, "A7C25") : null;
+    //
+    //     familyMembers = [];
+    //     const inputs = showFamilyMemberData.querySelectorAll('input');
+    //     inputs.forEach(input => {
+    //         const index = parseInt(input.dataset.index);
+    //         const type = input.dataset.type;
+    //         const value = input.value || null;
+    //
+    //         if (!familyMembers[index]) {
+    //             familyMembers[index] = {};
+    //         }
+    //         familyMembers[index][type] = value;
+    //     });
+    //
+    //     saveData();
+    // });
+    //
 
     // ==================== Smart Panel Creation ====================
 
@@ -1403,13 +1380,9 @@
     panelHeader.appendChild(panelClose);
     smartPanel.appendChild(panelHeader);
 
-    // Panel buttons container
-    const panelButtons = document.createElement('div');
-    panelButtons.id = 'ivac-smart-panel-buttons';
 
     const dataRow = document.createElement('div');
     dataRow.className = 'ivac-btn-row';
-
     async function verifyMobile() {
         const mobile = document.getElementById('ivac-userMobile').value;
         if (!mobile) {
@@ -1507,24 +1480,23 @@
 
     const tabBar = document.createElement('div');
     tabBar.id = "ivac-tab-bar";
-    tabBar.style = "width: 100%;";
+    tabBar.classList = "text-sm";
     tabBar.innerHTML = `
         <p id="ivac-message" style="color: red; padding: 12px 0px;"></p>
-            <div>
-                <button id="ivac-tab-0" class="ivac-button">Login</button>
-                <button id="ivac-tab-1" class="ivac-button">Info</button>
-                <button id="ivac-tab-2" class="ivac-button">Otp</button>
-                <button id="ivac-tab-3" class="ivac-button">user</button>
+            <div class="flex gap-1 flex-wrap bg-green-600 text-white text-sm">
+                <button id="ivac-tab-0" class="py-2 px-4 cursor-pointer">Login</button>
+                <button id="ivac-tab-1" class="py-2 px-4 cursor-pointer">Info</button>
+                <button id="ivac-tab-2" class="py-2 px-4 cursor-pointer">Otp</button>
+                <button id="ivac-tab-3" class="py-2 px-4 cursor-pointer">Slot</button>
+                <button id="ivac-tab-4" class="py-2 px-4 cursor-pointer">user</button>
             </div>
             <div class="ivac-tab-content-body" style="padding: 12px 0px; width: 100%;">
                 <div id="ivac-tab-0" class="ivac-tab-content d-none">
-                    <div style="display:flex; flex-direction: column; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
-                        <div
-                            style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
-                            <input type="text" id="ivac-userMobile" name="mobile" required placeholder="Enter mobile number"
-                                style="padding: 2px 4px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;">
-                            <button id="ivac-mobile-verify-btn" class="ivac-panel-btn" type="button"
-                                style="width: 100%;">Verify</button>
+                    <div class="flex flex-col gap-2 items-center justify-space-between">
+                        <div class="flex gap-2">
+                            <input type="text" id="ivac-userMobile" name="mobile" required placeholder="Enter mobile number" class="py-2 px-4 rounded border border-gray-300 ">
+                            <button id="ivac-mobile-verify-btn" class="py-2 px-4 rounded bg-green-600 text-white" type="button"
+                               >Verify</button>
                         </div>
     
                         <div
@@ -1615,17 +1587,38 @@
                     </div>
                 </div>
                 <div id="ivac-tab-3" class="ivac-tab-content d-none">
+                    <div id="slot-captcha-content">
+                    <input id="date-input" class="p-3 bg-gray-200 border border-gray-300" type="date">
+                    <button id="slot-button">Get Slots</button>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    </div>
+                </div>
+                <div id="ivac-tab-4" class="ivac-tab-content d-none">
                     <button id="ivac-user-settings-btn" class="ivac-panel-btn ivac-button" type="button">User Settings</button>
                     <button id="ivac-logout-btn" class="ivac-panel-btn ivac-button" type="button">Logout</button>
                 </div>
             </div>
         `;
 
+
+
+
+
+
     let mobileBtn = tabBar.querySelector('#ivac-mobile-verify-btn');
     mobileBtn && mobileBtn.addEventListener('click', verifyMobile);
 
-    tabBar.querySelector('#ivac-password-verify-btn').addEventListener('click', verifyPassword);
-    tabBar.querySelector('#ivac-otp-verify-btn').addEventListener('click', verifyOTP);
+    let passwordBtn = tabBar.querySelector('#ivac-password-verify-btn');
+    passwordBtn && passwordBtn.addEventListener('click', verifyPassword);
+    let otpBtn = tabBar.querySelector('#ivac-otp-verify-btn');
+    otpBtn && otpBtn.addEventListener('click', verifyOTP);
 
     tabBar.querySelector('#ivac-app-submit-btn').addEventListener('click', async function (e) {
         await sendDataToServer();
@@ -1693,31 +1686,22 @@
     });
 
 
-
-
-
-
     tabBar.querySelector('#ivac-tab-1').addEventListener('click', function (e) {
         toggleTab(1);
     });
-    familyCount = document.getElementById("family_count").value;
-    if (familyCount > 0) {
-        for (let i = 0; i < familyCount; i++) {
-            document.getElementById("ivac-family-member-data").innerHTML = `
+
+    document.addEventListener('DOMContentLoaded', function () {
+        familyCount = tabBar.getElementById("select-family-count").value || 0;
+        if (familyCount > 0) {
+            for (let i = 0; i < familyCount; i++) {
+                document.getElementById("ivac-family-member-data").innerHTML = `
         <label for="family-member-name">Family Member ${i + 1}</label>
         <input type="text" placeholder="Name" id="family-member-name" >
         <input type="text" placeholder="Webfile" id="family-member-webfile">
     `;
+            }
         }
-    }
-
-
-
-
-
-
-
-
+    })
 
 
     tabBar.querySelector('#ivac-tab-2').addEventListener('click', function (e) {
@@ -1725,44 +1709,44 @@
     });
 
 
-
-
-
-
     tabBar.querySelector('#ivac-tab-3').addEventListener('click', function (e) {
         toggleTab(3);
+    });
+    tabBar.querySelector('#slot-button').addEventListener('click', function (e) {
+        getSlotTimes();
+    });
+
+
+
+    tabBar.querySelector('#ivac-tab-4').addEventListener('click', function (e) {
+        toggleTab(4);
     });
 
     dataRow.appendChild(tabBar);
 
 
 
-    // Sixth row - Date selection
-    const dateSection = document.createElement('div');
-    dateSection.id = 'ivac-date-section';
 
-    const dateInput = document.createElement('input');
-    dateInput.id = 'ivac-date-input';
-    dateInput.type = 'date';
-    dateSection.appendChild(dateInput);
 
-    const slotBtn = document.createElement('button');
-    slotBtn.id = 'ivac-slot-btn';
-    slotBtn.textContent = 'Get Slot';
-    slotBtn.addEventListener('click', function (e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        getSlotTimes();
-    });
-    dateSection.appendChild(slotBtn);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Seventh row - Slot display
     const slotDisplay = document.createElement('div');
     slotDisplay.id = 'ivac-slot-display';
     slotDisplay.textContent = 'No slot selected';
-    panelButtons.appendChild(slotDisplay);
+    dataRow.appendChild(slotDisplay);
 
     // Eighth row - Captcha section
     const captchaSection = document.createElement('div');
@@ -1831,17 +1815,15 @@
     const paymentLinkContainer = document.createElement('div');
     paymentLinkContainer.id = 'ivac-payment-link-container';
     paymentLinkContainer.style.display = 'none';
-    panelButtons.appendChild(paymentLinkContainer);
+    dataRow.appendChild(paymentLinkContainer);
 
     // Bottom spacer
     const bottomSpacer = document.createElement('div');
     bottomSpacer.id = 'ivac-bottom-spacer';
-    panelButtons.appendChild(bottomSpacer);
 
     // Add all rows to panel
-    panelButtons.appendChild(dataRow);
-    panelButtons.appendChild(dateSection);
-    panelButtons.appendChild(captchaSection);
+    smartPanel.appendChild(dataRow);
+    smartPanel.appendChild(captchaSection);
 
     const bottomRow = document.createElement('div');
     bottomRow.className = 'ivac-bottom-row';
@@ -1855,8 +1837,10 @@
         content.innerHTML = paymentDetails;
     };
 
-    panelButtons.appendChild(bottomRow);
-    smartPanel.appendChild(panelButtons);
+
+
+    smartPanel.appendChild(bottomRow);
+    smartPanel.appendChild(bottomSpacer);
     document.body.appendChild(smartPanel);
 
     // Create toggle button for the panel (fixed position)
@@ -1882,6 +1866,12 @@
             e.stopPropagation();
         }
     });
+
+
+
+
+
+
 
     // Make panel draggable
     $(smartPanel).draggable({
@@ -1921,19 +1911,17 @@
                 left: panelSettings.left + 'px'
             });
         }
-
-        // Auto-fetch the auth token when the page loads
-        await fetchAuthToken();
+        if (!authToken) {
+            //await fetchAuthToken();
+        }
     }
 
     // Run initialization
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
-        init();
+        await init();
     }
-
-
 
 
 })();
