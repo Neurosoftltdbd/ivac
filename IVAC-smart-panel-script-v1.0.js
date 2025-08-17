@@ -11,11 +11,12 @@
 // @grant        GM_addStyle
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
 // @require      https://code.jquery.com/ui/1.13.1/jquery-ui.min.js
+// @require      https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4
 // ==/UserScript==
 
 (function () {
     'use strict';
-    // Add CSS styles for the panel
+
     GM_addStyle(`
         /* Smart Panel Styles */
         #ivac-smart-panel {
@@ -594,30 +595,29 @@
 
     `);
 
-    // Shared variables to hold data from the modal
-    let dynamicHighcom = null;
-    let dynamicWebfileId = null;
-    let dynamicIvacId = null;
-    let dynamicVisaType = null;
-    let dynamicFamilyCount = null;
-    let dynamicVisitPurpose = null;
-    let dynamicFullName = null;
-    let dynamicEmail = null;
-    let dynamicPhone = null;
-    let dynamicFamilyName = null;
-    let dynamicFamilyWebfileNo = null;
+    let highCommission = null;
+    let webFileId = null;
+    let ivacId = null;
+    let visaType = null;
+    let familyCount = null;
+    let visitPurpose = null;
+    let fullName = null;
+    let email = null;
+    let phone = null;
+    let familyName = null;
+    let familyWebFileId = null;
     let familyMembers = [];
-    let activeControllers = []; // To track AbortControllers for pending requests
-    let authToken = GM_getValue('authToken', ''); // Get saved token or use empty string
-    let slotInfo = { // To store slot information
+    let activeControllers = [];
+    let authToken = "";
+    let slotInfo = {
         appointment_date: null,
         appointment_time: null
     };
-    let captchaInfo = { // To store captcha information
+    let captchaInfo = {
         captcha_id: null,
         captcha_text: null
     };
-    let paymentLink = null; // To store the payment link
+    let paymentLink = null;
 
     // Default payment method
     const defaultPaymentMethod = {
@@ -630,52 +630,69 @@
 
     // Load saved data from storage
     function loadSavedData() {
-        dynamicHighcom = GM_getValue('dynamicHighcom', 4);
-        dynamicWebfileId = GM_getValue('dynamicWebfileId', null);
-        dynamicIvacId = GM_getValue('dynamicIvacId', 4);
-        dynamicVisaType = GM_getValue('dynamicVisaType', null);
-        dynamicFamilyCount = GM_getValue('dynamicFamilyCount', 0);
-        dynamicVisitPurpose = GM_getValue('dynamicVisitPurpose', null);
-        dynamicFullName = GM_getValue('dynamicFullName', null);
-        dynamicEmail = GM_getValue('dynamicEmail', null);
-        dynamicPhone = GM_getValue('dynamicPhone', null);
-        dynamicFamilyName = GM_getValue('dynamicFamilyName', null);
-        dynamicFamilyWebfileNo = GM_getValue('dynamicFamilyWebfileNo', null);
+        highCommission = GM_getValue('highcom', 4);
+        webFileId = GM_getValue('webfile_id', null);
+        ivacId = GM_getValue('ivac_id', 4);
+        visaType = GM_getValue('visa_type', null);
+        familyCount = GM_getValue('family_count', 0);
+        visitPurpose = GM_getValue('visit_purpose', null);
+        fullName = GM_getValue('full_name', null);
+        email = GM_getValue('email_name', null);
+        phone = GM_getValue('phone', null);
+        familyName = GM_getValue('familyName', null);
+        familyWebFileId = GM_getValue('familyWebfileNo', null);
         familyMembers = GM_getValue('familyMembers', []);
     }
 
     // Save data to storage
     function saveData() {
-        GM_setValue('dynamicHighcom', dynamicHighcom);
-        GM_setValue('dynamicWebfileId', dynamicWebfileId);
-        GM_setValue('dynamicIvacId', dynamicIvacId);
-        GM_setValue('dynamicVisaType', dynamicVisaType);
-        GM_setValue('dynamicFamilyCount', dynamicFamilyCount);
-        GM_setValue('dynamicVisitPurpose', dynamicVisitPurpose);
-        GM_setValue('dynamicFullName', dynamicFullName);
-        GM_setValue('dynamicEmail', dynamicEmail);
-        GM_setValue('dynamicPhone', dynamicPhone);
-        GM_setValue('dynamicFamilyName', dynamicFamilyName);
-        GM_setValue('dynamicFamilyWebfileNo', dynamicFamilyWebfileNo);
+        GM_setValue('highcom', highCommission);
+        GM_setValue('webfile_id', webFileId);
+        GM_setValue('ivac_id', ivacId);
+        GM_setValue('visa_type', visaType);
+        GM_setValue('family_count', familyCount);
+        GM_setValue('visit_purpose', visitPurpose);
+        GM_setValue('full_name', fullName);
+        GM_setValue('email_name', email);
+        GM_setValue('phone', phone);
+        GM_setValue('familyName', familyName);
+        GM_setValue('familyWebfileNo', familyWebFileId);
         GM_setValue('familyMembers', familyMembers);
         GM_setValue('authToken', authToken);
     }
 
+
+
+
+    let selectHighCommission = document.getElementById("select-high-commission");
+    let selectIvacCenter = document.getElementById("select-ivac-center");
+    let selectWebFile = document.getElementById("input-web-file");
+    let selectVisaType = document.getElementById("selecte-visa-type");
+    let selectFamilyCount = document.getElementById("select-family-count");
+    let showFamilyMemberData = document.getElementById("show-family-member-data");
+    let selectVisitPurpose = document.getElementById("select-visit-purpose");
+    let selectFullName = document.getElementById("input-full_name");
+    let selectEmail = document.getElementById("input-email");
+    let selectPhone = document.getElementById("input-phone");
+
+
+
+
     // ========== Application Submit Function ==========
     async function sendDataToServer() {
-        if (!dynamicWebfileId || !dynamicIvacId || !dynamicVisaType) {
+        if (!webFileId || !ivacId || !visaType) {
             setMessage("Please complete the Settings Panel");
             return;
         }
 
         let payload = {
-            highcom: dynamicHighcom.toString() || "4",
-            webfile_id: dynamicWebfileId,
-            webfile_id_repeat: dynamicWebfileId,
-            ivac_id: dynamicIvacId.toString() || "4",
-            visa_type: dynamicVisaType.toString() || "13",
-            family_count: dynamicFamilyCount ? dynamicFamilyCount.toString() : "0",
-            visit_purpose: dynamicVisitPurpose || "medical purpose"
+            highcom: highCommission.toString() || "4",
+            webfile_id: webFileId,
+            webfile_id_repeat: webFileId,
+            ivac_id: ivacId.toString() || "4",
+            visa_type: visaType.toString() || "13",
+            family_count: familyCount ? familyCount.toString() : "0",
+            visit_purpose: visitPurpose || "Medical purpose"
         };
 
         console.log("Submitting application with payload:", payload);
@@ -717,7 +734,7 @@
 
     // ========== Personal Info Submit Function ==========
     async function submitPersonalInfo() {
-        if (!dynamicFullName || !dynamicEmail || !dynamicPhone || !dynamicWebfileId) {
+        if (!fullName || !email || !phone || !webFileId) {
             setMessage("Please complete the Settings Panel");
             return;
         }
@@ -728,20 +745,20 @@
         try {
             // Prepare family members data
             const familyData = {};
-            for (let i = 0; i < (dynamicFamilyCount || 0); i++) {
+            for (let i = 0; i < (familyCount || 0); i++) {
                 const member = familyMembers[i] || {};
                 familyData[i + 1] = {
-                    name: member.name || dynamicFamilyName || "",
-                    webfile_no: member.webfile || dynamicFamilyWebfileNo || "",
-                    again_webfile_no: member.webfile || dynamicFamilyWebfileNo || ""
+                    name: member.name || familyName || "",
+                    webfile_no: member.webfile || familyWebFileId || "",
+                    again_webfile_no: member.webfile || familyWebFileId || ""
                 };
             }
 
             const payload = {
-                full_name: dynamicFullName,
-                email_name: dynamicEmail,
-                phone: dynamicPhone,
-                webfile_id: dynamicWebfileId,
+                full_name: fullName,
+                email_name: email,
+                phone: phone,
+                webfile_id: webFileId,
                 family: familyData
             };
 
@@ -821,14 +838,11 @@
 
     // ========== Stop All Requests Function ==========
     function stopAllRequests() {
-        // Abort all active requests
         activeControllers.forEach(controller => {
             controller.abort();
         });
-
         // Clear the array
         activeControllers = [];
-
         console.log('All pending requests have been stopped');
     }
 
@@ -837,12 +851,9 @@
         const payload = {
             resend: resend ? 1 : 0
         };
-
         console.log(`Sending ${resend ? 're' : ''}OTP with payload:`, payload);
-
         const controller = new AbortController();
         activeControllers.push(controller);
-
         try {
             const response = await fetch("https://api-payment.ivacbd.com/api/v2/payment/pay-otp-sent", {
                 method: "POST",
@@ -884,11 +895,6 @@
             setMessage("Please enter a valid 6-digit OTP");
             return;
         }
-
-        const payload = {
-            otp: otp
-        };
-
         console.log("Verifying OTP with payload:", payload);
 
         const controller = new AbortController();
@@ -903,7 +909,7 @@
                     "Authorization": `Bearer ${authToken}`,
                     "language": "en"
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({otp:otp}),
                 signal: controller.signal
             });
 
@@ -1219,194 +1225,19 @@
 
     // ==================== Modal and Input Functions ====================
 
-    // Create the modal for input
-    const modal = document.createElement('div');
-    modal.id = "ivac-helper-modal";
-    document.body.appendChild(modal);
-
-    // Modal content
-    modal.innerHTML = `
-        <style>
-            #ivac-helper-modal::-webkit-scrollbar {
-                width: 5px;
-            }
-            #ivac-helper-modal::-webkit-scrollbar-track {
-                background: #f1f1f1;
-                border-radius: 3px;
-            }
-            #ivac-helper-modal::-webkit-scrollbar-thumb {
-                background: linear-gradient(#6a11cb, #2575fc);
-                border-radius: 3px;
-            }
-            #ivac-helper-modal::-webkit-scrollbar-thumb:hover {
-                background: linear-gradient(#2575fc, #6a11cb);
-            }
-        </style>
-    `;
 
 
 
 
-    // High Commission dropdown - Sylhet (4) is now default
-    const highcomSelect = document.createElement('select');
-    highcomSelect.innerHTML = `
-        <option value="4">Sylhet</option>
-        <option value="1">Dhaka</option>
-        <option value="2">Chittagong</option>
-        <option value="3">Rajshahi</option>
-        <option value="5">Khulna</option>
-    `;
-    modal.appendChild(createLabel("Select High Commission:"));
-    modal.appendChild(highcomSelect);
 
-    // IVAC Center dropdown - IVAC Sylhet (4) is now default
-    const ivacSelect = document.createElement('select');
-    modal.appendChild(createLabel("Select an IVAC Center:"));
-    modal.appendChild(ivacSelect);
 
-    // Web File Number input
-    const webFileLabel = createLabel("Web File Number");
-    modal.appendChild(webFileLabel);
-    const webFileInput = document.createElement('input');
-    webFileInput.type = 'text';
-    webFileInput.placeholder = 'Enter Web File Number';
-    webFileInput.style.width = '100%';
-    webFileInput.style.padding = '8px';
-    webFileInput.style.border = '1px solid #ddd';
-    webFileInput.style.borderRadius = '6px';
-    webFileInput.style.marginBottom = '12px';
-    webFileInput.style.background = 'rgba(255,255,255,0.8)';
-    webFileInput.style.transition = 'all 0.3s ease';
-    webFileInput.style.boxShadow = 'inset 0 1px 3px rgba(0,0,0,0.1)';
-    webFileInput.style.fontSize = '12px';
-    modal.appendChild(webFileInput);
 
-    // Visa Type dropdown
-    const visaTypeSelect = document.createElement('select');
-    visaTypeSelect.innerHTML = `
-        <option value="3">TOURIST VISA</option>
-        <option value="13" selected>MEDICAL/MEDICAL ATTENDANT VISA</option>
-        <option value="1">BUSINESS VISA</option>
-        <option value="6">ENTRY VISA</option>
-        <option value="2">STUDENT VISA</option>
-    `;
-    modal.appendChild(createLabel("Select a Visa Type:"));
-    modal.appendChild(visaTypeSelect);
 
-    // Family Count dropdown
-    const inputFamilyCount = document.createElement('select');
-    inputFamilyCount.innerHTML = `
-        <option value="0">0</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-    `;
-    modal.appendChild(createLabel("Number of Family Members:"));
-    modal.appendChild(inputFamilyCount);
 
-    // Container for family member inputs
-    const familyInputsContainer = document.createElement('div');
-    familyInputsContainer.id = 'familyInputsContainer';
-    familyInputsContainer.style.marginTop = '8px';
-    modal.appendChild(familyInputsContainer);
 
-    // Visit Purpose textarea
-    const visitPurposeTextarea = document.createElement('textarea');
-    visitPurposeTextarea.placeholder = "Enter Visit Purpose Details";
-    modal.appendChild(createLabel("Visit Purpose Details:"));
-    modal.appendChild(visitPurposeTextarea);
 
-    // Personal Info Section
-    const personalInfoSection = document.createElement('div');
-    personalInfoSection.className = 'personal-info-section';
-    personalInfoSection.innerHTML = '<h4>Personal Information</h4>';
-    modal.appendChild(personalInfoSection);
-
-    // Personal Info Inputs
-    const inputFullName = createInput("Full Name", "Enter Full Name");
-    personalInfoSection.appendChild(inputFullName);
-
-    const inputEmail = createInput("Email", "Enter Email", "email");
-    personalInfoSection.appendChild(inputEmail);
-
-    const inputPhone = createInput("Phone Number", "Enter Phone Number", "tel");
-    personalInfoSection.appendChild(inputPhone);
-
-    // Token Input Section
-    const tokenContainer = document.createElement('div');
-    tokenContainer.id = 'ivac-token-container';
-    tokenContainer.innerHTML = '<h4>Authorization Token</h4>';
-    modal.appendChild(tokenContainer);
-
-    const tokenInput = document.createElement('input');
-    tokenInput.id = 'ivac-token-input';
-    tokenInput.type = 'text';
-    tokenInput.placeholder = 'Paste AUTH_TOKEN here';
-    tokenInput.value = authToken;
-    tokenContainer.appendChild(tokenInput);
-
-    const tokenSaveBtn = document.createElement('button');
-    tokenSaveBtn.id = 'ivac-token-save';
-    tokenSaveBtn.textContent = 'Save';
-    tokenSaveBtn.addEventListener('click', function () {
-        authToken = tokenInput.value;
-        GM_setValue('authToken', authToken);
-        alert('Token saved successfully!');
-    });
-    tokenContainer.appendChild(tokenSaveBtn);
-
-    // Modal footer with buttons (sticky at bottom)
-    const modalFooter = document.createElement('div');
-    modalFooter.id = 'ivac-modal-footer';
-    modalFooter.innerHTML = `
-        <button id="ivac-modal-cancel" class="ivac-modal-btn">Cancel</button>
-        <button id="ivac-modal-clear" class="ivac-modal-btn">Clear</button>
-        <button id="ivac-modal-save" class="ivac-modal-btn">Save</button>
-    `;
-    modal.appendChild(modalFooter);
-
-    // Helper function to create input fields
-    function createInput(labelText, placeholder, type = 'text') {
-        const container = document.createElement('div');
-        container.style.marginBottom = '12px';
-
-        const label = document.createElement('label');
-        label.innerText = labelText;
-        container.appendChild(label);
-
-        const input = document.createElement('input');
-        input.type = type;
-        input.placeholder = placeholder;
-        input.style.width = '100%';
-        input.style.padding = '8px';
-        input.style.border = '1px solid #ddd';
-        input.style.borderRadius = '6px';
-        input.style.marginBottom = '12px';
-        input.style.background = 'rgba(255,255,255,0.8)';
-        input.style.transition = 'all 0.3s ease';
-        input.style.boxShadow = 'inset 0 1px 3px rgba(0,0,0,0.1)';
-        input.style.fontSize = '12px';
-        container.appendChild(input);
-
-        return container;
-    }
-
-    // Helper function to create labels
-    function createLabel(text) {
-        const label = document.createElement('label');
-        label.innerText = text;
-        label.style.display = 'block';
-        label.style.marginBottom = '4px';
-        label.style.fontWeight = 'bold';
-        label.style.fontSize = '13px';
-        label.style.color = '#2c3e50';
-        return label;
-    }
-
-    // Function to update family member inputs based on count
     function updateFamilyInputs() {
-        const count = parseInt(inputFamilyCount.value);
+        const count = parseInt(familyCount.value);
         familyInputsContainer.innerHTML = '';
         familyMembers = familyMembers || [];
 
@@ -1456,9 +1287,8 @@
         }
     }
 
-    // Function to update IVAC centers based on selected High Commission
-    function updateIvacCenters() {
-        const selectedHighCom = highcomSelect.value;
+    function updateIvacCenters(selectedHighCommission) {
+
         const ivacCenters = {
             1: [[9, "IVAC, BARISAL"], [12, "IVAC, JESSORE"], [17, "IVAC, Dhaka (JFP)"], [20, "IVAC, SATKHIRA"]],
             2: [[5, "IVAC, CHITTAGONG"], [21, "IVAC, CUMILLA"], [22, "IVAC, NOAKHALI"], [23, "IVAC, BRAHMANBARIA"]],
@@ -1467,16 +1297,15 @@
             5: [[3, "IVAC, KHULNA"]]
         };
 
-        ivacSelect.innerHTML = '';
-        ivacCenters[selectedHighCom]?.forEach(([value, name]) => {
+        ivacCenters[selectedHighCommission]?.forEach(([value, name]) => {
             const option = document.createElement('option');
             option.value = value;
             option.text = name;
-            ivacSelect.appendChild(option);
+            selectIvacCenter.appendChild(option);
         });
     }
 
-    // Function to auto-fetch the auth token
+
     async function fetchAuthToken() {
         try {
             const response = await fetch("https://api-payment.ivacbd.com/api/v2/home", {
@@ -1505,67 +1334,28 @@
     }
 
     // Initialize IVAC centers
-    updateIvacCenters();
+    updateIvacCenters(highCommission);
 
     // Event listeners
-    highcomSelect.addEventListener('change', updateIvacCenters);
-    inputFamilyCount.addEventListener('change', updateFamilyInputs);
+    highCommission.addEventListener('change', updateIvacCenters);
+    familyCount.addEventListener('change', updateFamilyInputs);
 
-    // Modal button events
-    document.getElementById('ivac-modal-cancel').addEventListener('click', function () {
-        modal.style.display = 'none';
-    });
-
-    document.getElementById('ivac-modal-clear').addEventListener('click', function () {
-        webFileInput.value = "";
-        inputFamilyCount.value = "0";
-        highcomSelect.value = "4";
-        updateIvacCenters();
-        ivacSelect.value = "4";
-        visaTypeSelect.value = "13";
-        visitPurposeTextarea.value = "";
-        inputFullName.querySelector('input').value = "";
-        inputEmail.querySelector('input').value = "";
-        inputPhone.querySelector('input').value = "";
-        tokenInput.value = "";
-        updateFamilyInputs();
-
-        // Clear saved data
-        dynamicHighcom = 4;
-        dynamicIvacId = 4;
-        dynamicWebfileId = null;
-        dynamicVisaType = null;
-        dynamicFamilyCount = 0;
-        dynamicVisitPurpose = null;
-        dynamicFullName = null;
-        dynamicEmail = null;
-        dynamicPhone = null;
-        dynamicFamilyName = null;
-        dynamicFamilyWebfileNo = null;
-        familyMembers = [];
-        authToken = "";
-        GM_setValue('authToken', "");
-        saveData();
-    });
 
     document.getElementById('ivac-modal-save').addEventListener('click', function () {
-        dynamicWebfileId = webFileInput.value || null;
-        dynamicFamilyCount = parseInt(inputFamilyCount.value) || 0;
-        dynamicHighcom = parseInt(highcomSelect.value) || 4;
-        dynamicIvacId = parseInt(ivacSelect.value) || 4;
-        dynamicVisaType = parseInt(visaTypeSelect.value) || null;
-        dynamicVisitPurpose = visitPurposeTextarea.value || null;
-        dynamicFullName = inputFullName.querySelector('input').value || null;
-        dynamicEmail = inputEmail.querySelector('input').value || null;
-        dynamicPhone = inputPhone.querySelector('input').value || null;
-        dynamicFamilyName = inputFullName.querySelector('input').value || null;
-        dynamicFamilyWebfileNo = webFileInput.value ? webFileInput.value.replace(/(.{6})$/, "A7C25") : null;
-        authToken = tokenInput.value || "";
-        GM_setValue('authToken', authToken);
+        webFileId = selectWebFile.value || null;
+        familyCount = parseInt(selectFamilyCount.value) || 0;
+        highCommission = parseInt(selectHighCommission.value) || 4;
+        ivacId = parseInt(selectIvacCenter.value) || 4;
+        visaType = parseInt(selectVisaType.value);
+        visitPurpose = selectVisitPurpose.value;
+        fullName = selectFullName.value;
+        email = selectEmail.value;
+        phone = selectPhone.value;
+        familyName = showFamilyMemberData.querySelector('input').value || null;
+        familyWebFileId = selectWebFile.value ? selectWebFile.value.replace(/(.{6})$/, "A7C25") : null;
 
-        // Save family members data
         familyMembers = [];
-        const inputs = familyInputsContainer.querySelectorAll('input');
+        const inputs = showFamilyMemberData.querySelectorAll('input');
         inputs.forEach(input => {
             const index = parseInt(input.dataset.index);
             const type = input.dataset.type;
@@ -1578,8 +1368,13 @@
         });
 
         saveData();
-        modal.style.display = 'none';
     });
+
+
+
+
+
+
 
     // ==================== Smart Panel Creation ====================
 
@@ -1722,35 +1517,85 @@
                 <button id="ivac-tab-3" class="ivac-button">user</button>
             </div>
             <div class="ivac-tab-content-body" style="padding: 12px 0px; width: 100%;">
-                <div class="ivac-tab-content d-none">
+                <div id="ivac-tab-0" class="ivac-tab-content d-none">
                     <div style="display:flex; flex-direction: column; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
-                    <div
-                        style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
-                        <input type="text" id="ivac-userMobile" name="mobile" required placeholder="Enter mobile number"
-                            style="padding: 2px 4px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;">
-                        <button id="ivac-mobile-verify-btn" class="ivac-panel-btn" type="button"
-                            style="width: 100%;">Verify</button>
-                    </div>
-
-                    <div
-                        style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
-                        <input type="password" id="ivac-password" name="password" required placeholder="Enter password"
-                            style="padding: 2px 4px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;">
-                        <button id="ivac-password-verify-btn" class="ivac-panel-btn" type="button"
-                            style="width: 100%;">Verify</button>
-                    </div>
-
-                    <div
-                        style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
-                        <input type="text" id="ivac-otp" name="otp" required placeholder="Enter OTP"
-                            style="padding: 2px 4px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;">
-                        <button id="ivac-otp-verify-btn" class="ivac-panel-btn" type="button"
-                            style="width: 100%;">Verify</button>
-                    </div>
+                        <div
+                            style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
+                            <input type="text" id="ivac-userMobile" name="mobile" required placeholder="Enter mobile number"
+                                style="padding: 2px 4px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;">
+                            <button id="ivac-mobile-verify-btn" class="ivac-panel-btn" type="button"
+                                style="width: 100%;">Verify</button>
+                        </div>
+    
+                        <div
+                            style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
+                            <input type="password" id="ivac-password" name="password" required placeholder="Enter password"
+                                style="padding: 2px 4px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;">
+                            <button id="ivac-password-verify-btn" class="ivac-panel-btn" type="button"
+                                style="width: 100%;">Verify</button>
+                        </div>
+    
+                        <div
+                            style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
+                            <input type="text" id="ivac-otp" name="otp" required placeholder="Enter OTP"
+                                style="padding: 2px 4px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;">
+                            <button id="ivac-otp-verify-btn" class="ivac-panel-btn" type="button"
+                                style="width: 100%;">Verify</button>
+                        </div>
                     </div>
                 </div>
                 <div id="ivac-tab-1" class="ivac-tab-content d-none">
-                    <div style="display:flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
+                    <div id="ivac-info-form" style="display:flex; flex-direction: column; gap: 8px; width: 100%;">
+                    <div>
+                    <label for="high_commission">Select High Commission</label>
+                        <select name="high_commission" id="select-high-commission">
+                            <option value="4" selected>Sylhet</option>
+                            <option value="1">Dhaka</option>
+                            <option value="2">Chittagong</option>
+                            <option value="3">Rajshahi</option>
+                            <option value="5">Khulna</option>
+                        </select>
+                    </div>
+                    <div>
+                    <select name="ivac_center" id="select-ivac-center">
+                    
+                    </select>
+                    </div>
+                    <div>
+                        <input name="web_file" id="input-web-file" type="text" placeholder="Enter Web File Number">
+                    </div>
+                    <label for="visa_type">Select Visa Type</label>
+                    <select name="visa_type" id="select-visa-type">
+                        <option value="3">TOURIST VISA</option>
+                        <option value="13" selected>MEDICAL/MEDICAL ATTENDANT VISA</option>
+                        <option value="1">BUSINESS VISA</option>
+                        <option value="6">ENTRY VISA</option>
+                        <option value="2">STUDENT VISA</option>
+                    </select>
+                    <select name="family_count" id="select-family-count">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                    <div id="show-family-member-data" style="display: none;">
+                    
+                    </div>
+                    <div>
+                        <textarea name="visit_purpose" id="select-visit-purpose" cols="30" rows="10" placeholder="Enter Visit Purpose Details"></textarea>
+                    </div>
+                    <div>
+                        <input name="full_name" id="input-full_name" type="text" placeholder="Enter Full Name">
+                        <input name="email" id="input-email" type="email" placeholder="Enter Email">
+                        <input name="phone" id="input-phone" type="tel" placeholder="Enter Phone Number">
+                    </div>
+                    <div>
+                        <button id="ivac-modal-clear" class="ivac-modal-btn">Clear</button>
+                        <button id="ivac-modal-save" class="ivac-modal-btn">Save</button>
+                    </div>
+
+
                     <button id="ivac-app-submit-btn" class="ivac-panel-btn ivac-button" type="button">App Info</button>
                     <button id="ivac-personal-submit-btn" class="ivac-panel-btn ivac-button" type="button">Per Info</button>
                     <button id="ivac-overview-btn" class="ivac-panel-btn ivac-button" type="button">Overview</button>
@@ -1776,9 +1621,12 @@
             </div>
         `;
 
-    tabBar.querySelector('#ivac-mobile-verify-btn').addEventListener('click', verifyMobile);
+    let mobileBtn = tabBar.querySelector('#ivac-mobile-verify-btn');
+    mobileBtn && mobileBtn.addEventListener('click', verifyMobile);
+
     tabBar.querySelector('#ivac-password-verify-btn').addEventListener('click', verifyPassword);
     tabBar.querySelector('#ivac-otp-verify-btn').addEventListener('click', verifyOTP);
+
     tabBar.querySelector('#ivac-app-submit-btn').addEventListener('click', async function (e) {
         await sendDataToServer();
     });
@@ -1804,52 +1652,83 @@
         }
     });
 
-    tabBar.querySelector('#ivac-user-settings-btn').addEventListener('click', function (e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        // Load saved data first
+    tabBar.querySelector('#ivac-tab-1').addEventListener('click', function (e) {
+
+
+        toggleTab(1);
+        // Update the saved data in the modal
+
         loadSavedData();
 
         // Set current values in the modal
-        webFileInput.value = dynamicWebfileId || "";
-        inputFamilyCount.value = dynamicFamilyCount || 0;
-        highcomSelect.value = dynamicHighcom || 4;
-        updateIvacCenters();
+        selectHighCommission.value = highCommission || 4;
+        selectWebFile.value = webFileId || "";
+        selectFamilyCount.value = familyCount || 0;
+        updateIvacCenters(selectHighCommission.value || 4);
         setTimeout(() => {
-            ivacSelect.value = dynamicIvacId || 4;
-        }, 100);
-        visaTypeSelect.value = dynamicVisaType || 13;
-        visitPurposeTextarea.value = dynamicVisitPurpose || "";
-        inputFullName.querySelector('input').value = dynamicFullName || "";
-        inputEmail.querySelector('input').value = dynamicEmail || "";
-        inputPhone.querySelector('input').value = dynamicPhone || "";
-        tokenInput.value = authToken || "";
+            selectIvacCenter.value = ivacId || 4;
+        }, 1000);
+        selectVisaType.value = visaType || 13;
+        selectVisitPurpose.value = visitPurpose || "Medical Visit";
+        selectFullName.querySelector('input').value = fullName || "";
+        selectEmail.querySelector('input').value = email || "";
+        selectPhone.querySelector('input').value = phone || "";
 
         // Update family inputs with saved data
         updateFamilyInputs();
         setTimeout(() => {
             familyMembers.forEach((member, index) => {
-                const nameInput = familyInputsContainer.querySelector(`input[data-index="${index}"][data-type="name"]`);
-                const webfileInput = familyInputsContainer.querySelector(`input[data-index="${index}"][data-type="webfile"]`);
+                const nameInput = showFamilyMemberData.querySelector(`input[data-index="${index}"][data-type="name"]`);
+                const webfileInput = showFamilyMemberData.querySelector(`input[data-index="${index}"][data-type="webfile"]`);
                 if (nameInput) nameInput.value = member.name || "";
                 if (webfileInput) webfileInput.value = member.webfile || "";
             });
-        }, 100);
+        }, 1000);
 
-        modal.style.display = 'block';
-        smartPanel.classList.remove('visible');
+
     });
+
     tabBar.querySelector('#ivac-tab-0').addEventListener('click', function (e) {
         toggleTab(0);
     });
+
+
+
+
+
+
     tabBar.querySelector('#ivac-tab-1').addEventListener('click', function (e) {
         toggleTab(1);
     });
+    familyCount = document.getElementById("family_count").value;
+    if (familyCount > 0) {
+        for (let i = 0; i < familyCount; i++) {
+            document.getElementById("ivac-family-member-data").innerHTML = `
+        <label for="family-member-name">Family Member ${i + 1}</label>
+        <input type="text" placeholder="Name" id="family-member-name" >
+        <input type="text" placeholder="Webfile" id="family-member-webfile">
+    `;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
     tabBar.querySelector('#ivac-tab-2').addEventListener('click', function (e) {
         toggleTab(2);
     });
+
+
+
+
+
+
     tabBar.querySelector('#ivac-tab-3').addEventListener('click', function (e) {
         toggleTab(3);
     });
