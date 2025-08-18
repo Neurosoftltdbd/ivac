@@ -19,7 +19,7 @@
 
     GM_addStyle(`
         /* Smart Panel Styles */
-        #ivac-smart-panel {
+        #smart-panel {
             position: fixed;
             bottom: 80px;
             right: 20px;
@@ -35,28 +35,16 @@
             transition: all 0.3s ease;
             width: 350px;
             height: 450px;
-            overflow-y: auto;
             pointer-events: none;
         }
 
-        #ivac-smart-panel.visible {
+        #smart-panel.visible {
             transform: translateY(0);
             opacity: 1;
             pointer-events: auto;
         }
 
-        #ivac-smart-panel-header {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 6px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            cursor: move;
-            position: relative;
-        }
-
-        #ivac-smart-panel-title {
+        #smart-panel-title {
             font-size: 14px;
             font-weight: bold;
             color: #2c3e50;
@@ -77,7 +65,7 @@
             100% { transform: scale(1.05); }
         }
 
-        #ivac-smart-panel-close {
+        #smart-panel-close {
             background: none;
             border: none;
             font-size: 16px;
@@ -90,12 +78,12 @@
             right: 0;
         }
 
-        #ivac-smart-panel-close:hover {
+        #smart-panel-close:hover {
             color: #e74c3c;
             transform: scale(1.2);
         }
         
-        #ivac-toggle-panel {
+        #toggle-panel {
             position: fixed;
             bottom: 20px;
             right: 20px;
@@ -115,12 +103,25 @@
             transition: all 0.3s ease;
         }
 
-        #ivac-toggle-panel:hover {
+        #toggle-panel:hover {
             transform: scale(1.1);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
-        button {
+        #smart-panel button {
             cursor: pointer;
+            color: white;
+            background-color: #135d32;
+            border-radius:0.25rem;
+            width:fit-content;
+            padding: 0.5rem 0.8rem;
+        }
+        #smart-panel input, #smart-panel select{
+        background-color: white;
+        border-radius:0.25rem;
+        width:100%;
+        border: 1px solid grey;
+        padding: 6px 8px;
+        margin: 4px 0px;
         }
 
         .d-none{
@@ -980,124 +981,115 @@
     }
 
     const htmlData = document.createElement('div');
-    htmlData.id = "ivac-smart-panel";
-    htmlData.classList = "flex flex-col gap-2 bg-white rounded-lg shadow-lg position-relative";
+    htmlData.id = "smart-panel";
     htmlData.innerHTML = `
-        <div id="smart-panel-header" class="flex gap-1 py-1 rounded items-center justify-between bg-green-600 text-sm cursor-move position-absolute">
+        <div id="smart-panel-header" class="flex gap-1 py-1 rounded items-center justify-between bg-[#135d32] text-sm cursor-move">
             <h3 class="text-white mx-4">IVAC Smart Panel</h3>
-            <button id="close-button" class="cursor-pointer me-1 p-1 rounded bg-gray-200 hover:bg-gray-300 text-red-600"><i class="bi bi-x-circle"></i></button>
+            <button id="close-button"><span class="-me-2 p-1 bg-gray-200 hover:bg-gray-300 rounded text-red-600"><i class="bi bi-x-circle"></i></span></button>
         </div>
         <div class="flex flex-col gap-2">
-            <p id="ivac-message" style="color: red; padding: 12px 0px;"></p>
-            <div class="flex gap-1 flex-wrap rounded bg-green-600 text-white text-sm">
-                <button id="ivac-tab-0" class="p-2 cursor-pointer">Login</button>
-                <button id="ivac-tab-1" class="p-2 cursor-pointer">Info</button>
-                <button id="ivac-tab-2" class="p-2 cursor-pointer">Otp</button>
-                <button id="ivac-tab-3" class="p-2 cursor-pointer">Slot</button>
-                <button id="ivac-tab-4" class="p-2 cursor-pointer">user</button>
+            <p id="ivac-message" class="text-red-600 text-sm py-2"></p>
+            <div class="flex gap-1 flex-wrap rounded bg-[#135d32] text-white text-sm">
+                <button id="ivac-tab-0">Login</button>
+                <button id="ivac-tab-1">Info</button>
+                <button id="ivac-tab-2">Otp</button>
+                <button id="ivac-tab-3">Slot</button>
+                <button id="ivac-tab-4">user</button>
             </div>
-            <div class="ivac-tab-content-body" style="padding: 12px 0px; width: 100%;">
+            <div class="ivac-tab-content-body py-4 w-full overflow-y-auto h-[300px] text-sm">
                 <div id="ivac-tab-0" class="ivac-tab-content">
                     <div class="flex flex-col gap-2 w-full">
                         <div class="flex flex-col gap-2">
-                            <input type="text" id="ivac-userMobile" name="mobile" required placeholder="Enter mobile number" class="py-1 px-2 rounded border border-gray-300">
-                            <input type="password" id="ivac-password" name="password" required placeholder="Enter password" class="py-1 px-2 rounded border border-gray-300">
-                            <button id="send-login-otp-button" class="py-1 px-2 rounded bg-green-600 text-white w-fit" type="button">Send OTP</button>
+                            <input type="text" id="ivac-userMobile" name="mobile" required placeholder="Enter mobile number">
+                            <input type="password" id="ivac-password" name="password" required placeholder="Enter password" >
+                            <button id="send-login-otp-button" type="button">Send OTP</button>
                         </div>
     
                         <div class="flex flex-col gap-2">
-                            <input type="text" id="ivac-otp" name="otp" required placeholder="Enter OTP" class="py-1 px-2 rounded border border-gray-300">
-                            <button id="login-otp-verify-button" class="py-1 px-2 rounded bg-green-600 text-white w-fit" type="button">Verify</button>
+                            <input type="text" id="ivac-otp" name="otp" required placeholder="Enter OTP" >
+                            <button id="login-otp-verify-button" type="button">Verify</button>
                         </div>
                     </div>
                 </div>
                 <div id="ivac-tab-1" class="ivac-tab-content d-none">
-                    <div id="ivac-info-form" style="display:flex; flex-direction: column; gap: 8px; width: 100%;">
-                    <div>
-                    <label for="high_commission">Select High Commission</label>
-                        <select name="high_commission" id="select-high-commission">
-                            <option value="4" selected>Sylhet</option>
-                            <option value="1">Dhaka</option>
-                            <option value="2">Chittagong</option>
-                            <option value="3">Rajshahi</option>
-                            <option value="5">Khulna</option>
+                    <div id="ivac-info-form" class="flex flex-col gap-2 w-full">
+                        <div>
+                            <label for="high_commission">Select High Commission</label>
+                            <select name="high_commission" id="select-high-commission">
+                                <option value="4" selected>Sylhet</option>
+                                <option value="1">Dhaka</option>
+                                <option value="2">Chittagong</option>
+                                <option value="3">Rajshahi</option>
+                                <option value="5">Khulna</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select name="ivac_center" id="select-ivac-center">
+                                <option>Select IVAC Center</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input name="web_file" id="input-web-file" type="text" placeholder="Enter Web File Number">
+                        </div>
+                        <label for="visa_type">Select Visa Type</label>
+                        <select name="visa_type" id="select-visa-type">
+                            <option value="3">TOURIST VISA</option>
+                            <option value="13" selected>MEDICAL/MEDICAL ATTENDANT VISA</option>
+                            <option value="1">BUSINESS VISA</option>
+                            <option value="6">ENTRY VISA</option>
+                            <option value="2">STUDENT VISA</option>
                         </select>
-                    </div>
-                    <div>
-                    <select name="ivac_center" id="select-ivac-center">
-                    
-                    </select>
-                    </div>
-                    <div>
-                        <input name="web_file" id="input-web-file" type="text" placeholder="Enter Web File Number">
-                    </div>
-                    <label for="visa_type">Select Visa Type</label>
-                    <select name="visa_type" id="select-visa-type">
-                        <option value="3">TOURIST VISA</option>
-                        <option value="13" selected>MEDICAL/MEDICAL ATTENDANT VISA</option>
-                        <option value="1">BUSINESS VISA</option>
-                        <option value="6">ENTRY VISA</option>
-                        <option value="2">STUDENT VISA</option>
-                    </select>
-                    <select name="family_count" id="select-family-count">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                    </select>
-                    <div id="show-family-member-data" style="display: none;">
-                    
-                    </div>
-                    <div>
-                        <textarea name="visit_purpose" id="select-visit-purpose" cols="30" rows="10" placeholder="Enter Visit Purpose Details"></textarea>
-                    </div>
-                    <div>
-                        <input name="full_name" id="input-full_name" type="text" placeholder="Enter Full Name">
-                        <input name="email" id="input-email" type="email" placeholder="Enter Email">
-                        <input name="phone" id="input-phone" type="tel" placeholder="Enter Phone Number">
-                    </div>
-                    <div>
-                        <button id="ivac-modal-clear" class="ivac-modal-btn">Clear</button>
-                        <button id="ivac-modal-save" class="ivac-modal-btn">Save</button>
-                    </div>
-
-
-                    <button id="ivac-app-submit-btn" class="ivac-panel-btn ivac-button" type="button">App Info</button>
-                    <button id="ivac-personal-submit-btn" class="ivac-panel-btn ivac-button" type="button">Per Info</button>
-                    <button id="ivac-overview-btn" class="ivac-panel-btn ivac-button" type="button">Overview</button>
+                        <label for="family_count">Select Family Count</label>
+                        <select name="family_count" id="select-family-count">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                        <div id="show-family-member-data" style="display: none;">
+                        
+                        </div>
+                        <div>
+                            <input name="visit_purpose" id="select-visit-purpose" type="text" placeholder="Enter Visit Purpose Details">
+                        </div>
+                        <div>
+                            <input name="full_name" id="input-full_name" type="text" placeholder="Enter Full Name">
+                            <input name="email" id="input-email" type="email" placeholder="Enter Email">
+                            <input name="phone" id="input-phone" type="tel" placeholder="Enter Phone Number">
+                        </div>
+                        <div>
+                            <button id="ivac-modal-clear" class="ivac-modal-btn">Clear</button>
+                            <button id="ivac-modal-save" class="ivac-modal-btn">Save</button>
+                        </div>
                     </div>
                 </div>
                 <div id="ivac-tab-2" class="ivac-tab-content d-none">
-                    <div style="display:flex; gap: 8px; align-items: center; justify-content: space-between;">
-                        <button id="ivac-send-otp-btn" class="ivac-panel-btn" type="button">Send OTP</button>
-                        <button id="ivac-resend-otp-btn" class="ivac-panel-btn" type="button">Resend OTP</button>
-                    </div>
-                    <div style="padding: 12px 0px; display: flex; flex-direction: column; gap: 8px;">
+                    
+                    
+                    <div>
                         <h5>OTP Verification</h5>
-                        <div style="display:flex; justify-content: space-between; align-items: center;">
-                            <input type="text" id="ivac-otp-input" style="width:100%;" placeholder="Enter 6-digit OTP" maxLength="6" />
-                            <button id="ivac-otp-verify-btn" class="ivac-button" type="button">Verify</button>
+                        <div>
+                            <input type="text" id="ivac-otp-input" placeholder="Enter 6-digit OTP" maxLength="6" />
+                            <button id="ivac-otp-verify-btn" type="button">Verify</button>
+                            <button id="ivac-resend-otp-btn" type="button">Resend OTP</button>
                         </div>
                     </div>
                 </div>
                 <div id="ivac-tab-3" class="ivac-tab-content d-none">
                     <div id="slot-captcha-content">
-                    <input id="date-input" class="p-3 bg-gray-200 border border-gray-300" type="date">
-                    <button id="slot-button">Get Slots</button>
-                    <div id="ivac-slot-display">No slots Selected</div>
+                        <input id="date-input" type="date">
+                        <button id="slot-button">Get Slots</button>
+                        <div id="ivac-slot-display">No slots Selected</div>
                     <div id="captcha-container" class="w-2/3">
                     
                     </div>
-                    <button id="captcha-generate-button" class="py-2 px-4 rounded bg-green-600 text-white" type="button">Generate</button>
+                    <button id="captcha-generate-button" type="button">Generate</button>
                    <div>
                         <input id="captcha-input" type="text" placeholder="Enter Captcha">
-                        <button id="captcha-verify-button" class="py-2 px-4 rounded bg-green-600 text-white" type="button">Verify</button>
+                        <button id="captcha-verify-button" type="button">Verify</button>
                     </div>
-                    <div class="flex justify-end">
-                        <button id="paynow-button" class="py-2 px-4 rounded bg-green-600 text-white">Pay Now</button>
-                        <p id="payment-link-container" style="display: none;"></p>
-                    </div>
+                    
                     
                     
                     
@@ -1105,8 +1097,10 @@
                     </div>
                 </div>
                 <div id="ivac-tab-4" class="ivac-tab-content d-none">
-                    <button id="ivac-user-settings-btn" class="ivac-panel-btn ivac-button" type="button">User Settings</button>
-                    <button id="ivac-logout-btn" class="ivac-panel-btn ivac-button" type="button">Logout</button>
+                    <div>
+                        <button id="paynow-button">Pay Now</button>
+                        <p id="payment-link-container" style="display: none;"></p>
+                    </div>
                 </div>
             </div>
             
@@ -1123,21 +1117,6 @@
 
     htmlData.querySelector('#send-login-otp-button').addEventListener('click', sendLoginOtp);
     htmlData.querySelector('#login-otp-verify-button').addEventListener('click', verifyLoginOtp);
-
-    htmlData.querySelector('#ivac-app-submit-btn').addEventListener('click', async function (e) {
-        await sendDataToServer();
-    });
-
-    htmlData.querySelector('#ivac-personal-submit-btn').addEventListener('click', async function (e) {
-        await submitPersonalInfo();
-    });
-
-    htmlData.querySelector('#ivac-overview-btn').addEventListener('click', async function (e) {
-        await sendOverviewRequest();
-    });
-    htmlData.querySelector('#ivac-send-otp-btn').addEventListener('click', async function (e) {
-        await sendOTP(false);
-    });
 
     htmlData.querySelector('#ivac-resend-otp-btn').addEventListener('click', async function (e) {
         await sendOTP(true);
@@ -1189,18 +1168,18 @@
         toggleTab(1);
     });
 
-    document.addEventListener('DOMContentLoaded', function () {
-        familyCount = htmlData.getElementById("select-family-count").value || 0;
+    htmlData.querySelector("#select-family-count").addEventListener('change', ()=>{
+        familyCount = parseInt(document.getElementById("select-family-count").value);
         if (familyCount > 0) {
             for (let i = 0; i < familyCount; i++) {
-                document.getElementById("ivac-family-member-data").innerHTML = `
-        <label for="family-member-name">Family Member ${i + 1}</label>
-        <input type="text" placeholder="Name" id="family-member-name" >
-        <input type="text" placeholder="Webfile" id="family-member-webfile">
-    `;
+                document.getElementById("show-family-member-data").innerHTML = `
+                    <label for="family-member-name">Family Member ${i + 1}</label>
+                    <input type="text" placeholder="Name" id="family-member-name" >
+                    <input type="text" placeholder="Webfile" id="family-member-webfile">
+                `;
             }
         }
-    })
+    });
 
 
     htmlData.querySelector('#ivac-tab-2').addEventListener('click', function (e) {
@@ -1240,7 +1219,7 @@
 
     // Create toggle button for the panel (fixed position)
     const togglePanelBtn = document.createElement('button');
-    togglePanelBtn.id = 'ivac-toggle-panel';
+    togglePanelBtn.id = 'toggle-panel';
     togglePanelBtn.innerHTML = '⚙️';
     togglePanelBtn.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -1270,7 +1249,7 @@
 
     // Make panel draggable
     $(htmlData).draggable({
-        handle: '#smart-panel-header',
+        handle: '#panel-header',
         containment: 'window',
         scroll: false,
         start: function () {
@@ -1284,7 +1263,7 @@
 
     // Function to save panel position
     function savePanelSettings() {
-        const panel = $('#ivac-smart-panel');
+        const panel = $('#smart-panel');
         const settings = {
             top: parseInt(panel.css('top')),
             left: parseInt(panel.css('left')),
