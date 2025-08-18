@@ -94,84 +94,7 @@
             color: #e74c3c;
             transform: scale(1.2);
         }
-
-        #ivac-smart-panel-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .ivac-panel-btn {
-            padding: 6px 8px;
-            border-radius: 6px;
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-            font-size: 12px;
-            margin-bottom: 2px;
-            background: linear-gradient(145deg, #6a11cb, #2575fc);
-        }
-
-        .ivac-panel-btn::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0.1));
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-
-        .ivac-panel-btn:hover::after {
-            opacity: 1;
-        }
-
-        .ivac-panel-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        #ivac-settings-btn {
-            background: linear-gradient(145deg, #5a0080, #9932cc);
-        }
-
-        #ivac-app-submit-btn {
-            background: linear-gradient(145deg, #11998e, #38ef7d);
-        }
-
-        #ivac-personal-submit-btn {
-          background: linear-gradient(145deg, #f46b45, #eea849);
-        }
-
-        #ivac-overview-btn {
-            background: linear-gradient(145deg, #8e2de2, #4a00e0);;
-        }
-
-        #ivac-payment-btn {
-            background: linear-gradient(145deg, #228B22, #006400);
-        }
-        #ivac-stop-all-btn {
-            background: linear-gradient(145deg, #ff416c, #ff4b2b);
-        }
-        #ivac-send-otp-btn {
-            background: linear-gradient(145deg, #00b09b, #96c93d);
-        }
-        #ivac-resend-otp-btn {
-            background: linear-gradient(145deg, #00c6ff, #0072ff);
-        }
-        #ivac-verify-otp-btn {
-            background: linear-gradient(145deg, #f12711, #f5af19);
-        }
+        
         #ivac-toggle-panel {
             position: fixed;
             bottom: 20px;
@@ -196,397 +119,8 @@
             transform: scale(1.1);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
         }
-
-        /* Modal Styles */
-        #ivac-helper-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 15px;
-            z-index: 1001;
-            display: none;
-            width: 320px;
-            max-height: 60vh;
-            overflow-y: auto;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        #ivac-helper-modal::-webkit-scrollbar {
-            width: 5px;
-        }
-        #ivac-helper-modal::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        #ivac-helper-modal::-webkit-scrollbar-thumb {
-            background: linear-gradient(#6a11cb, #2575fc);
-            border-radius: 3px;
-        }
-        #ivac-helper-modal::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(#2575fc, #6a11cb);
-        }
-
-        #ivac-helper-modal label {
-            display: block;
-            margin-bottom: 4px;
-            font-weight: bold;
-            font-size: 13px;
-            color: #2c3e50;
-        }
-
-        #ivac-helper-modal input,
-        #ivac-helper-modal select,
-        #ivac-helper-modal textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            margin-bottom: 12px;
-            background: rgba(255,255,255,0.8);
-            transition: all 0.3s ease;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-            font-size: 12px;
-        }
-
-        #ivac-helper-modal input:focus,
-        #ivac-helper-modal select:focus,
-        #ivac-helper-modal textarea:focus {
-            border-color: #6a11cb;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(106,17,203,0.2);
-        }
-
-        #ivac-helper-modal textarea {
-            height: 70px;
-            resize: vertical;
-        }
-
-        #ivac-modal-footer {
-            position: sticky;
-            bottom: 0;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
-            padding: 12px 0 5px;
-            display: flex;
-            gap: 8px;
-            justify-content: flex-end;
-            border-top: 1px solid rgba(0,0,0,0.1);
-            margin-top: 8px;
-        }
-
-        .ivac-modal-btn {
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: none;
-            color: white;
-            font-weight: bold;
+        button {
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            font-size: 12px;
-        }
-
-        .ivac-modal-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        #ivac-modal-cancel {
-            background: linear-gradient(145deg, #e74c3c, #c0392b);
-        }
-
-        #ivac-modal-clear {
-            background: linear-gradient(145deg, #f39c12, #e67e22);
-        }
-
-        #ivac-modal-save {
-            background: linear-gradient(145deg, #2ecc71, #27ae60);
-        }
-
-        /* Family Member Styles */
-        .family-member {
-            margin-bottom: 12px;
-            border: 1px solid #ddd;
-            padding: 8px;
-            border-radius: 6px;
-            background: rgba(255,255,255,0.7);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .family-member h5 {
-            font-weight: bold;
-            font-size: 13px;
-            margin-bottom: 8px;
-            color: #6a11cb;
-            border-bottom: 1px dashed #ddd;
-            padding-bottom: 4px;
-        }
-
-        /* Personal Info Section */
-        .personal-info-section {
-            margin-top: 15px;
-            padding-top: 12px;
-            border-top: 1px dashed #ccc;
-        }
-
-        .personal-info-section h4 {
-            color: #6a11cb;
-            margin-bottom: 12px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .personal-info-section h4::before {
-            content: "👤";
-        }
-
-        /* Token Input Styles */
-        #ivac-token-container {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px dashed #ccc;
-        }
-
-        #ivac-token-input {
-            width: calc(100% - 65px) !important;
-            display: inline-block;
-            margin-right: 5px;
-        }
-
-        #ivac-token-save {
-            display: inline-block;
-            width: 60px;
-            padding: 8px;
-            background: linear-gradient(145deg, #2ecc71, #27ae60);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 12px;
-        }
-
-        #ivac-token-save:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* OTP Section Styles */
-        #ivac-otp-section {
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        #ivac-otp-input {
-            flex: 1;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 6px;
-            font-size: 12px;
-            height: 30px;
-        }
-
-        #ivac-otp-verify {
-            width: 80px;
-            height: 30px;
-            background: linear-gradient(145deg, #f12711, #f5af19);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        #ivac-otp-verify:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Date Section Styles */
-        #ivac-date-section {
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        #ivac-date-input {
-            flex: 1;
-            padding: 6px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 12px;
-            height: 30px;
-        }
-
-        #ivac-slot-btn {
-            width: 80px;
-            height: 30px;
-            padding: 6px;
-            background: linear-gradient(145deg, #8e2de2, #4a00e0);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        #ivac-slot-display {
-            margin-top: 3px;
-            padding: 6px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: #f8f9fa;
-            text-align: center;
-            font-size: 12px;
-            font-weight: bold;
-            color: #e74c3c;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Button Row Styles */
-        .ivac-btn-row {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 2px;
-        }
-
-        .ivac-btn-row .ivac-panel-btn {
-            flex: 1;
-        }
-
-        /* Updated Captcha Section Styles */
-        #ivac-captcha-section {
-            margin-top: 6px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        #ivac-captcha-container {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        #ivac-captcha-image-container {
-            width: 100%;
-            height: 30px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: #f8f9fa;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 5px;
-            padding: 5px;
-            box-sizing: border-box;
-        }
-
-        #ivac-captcha-image {
-            max-width: 100%;
-            max-height: 100%;
-        }
-
-        #ivac-captcha-buttons-row {
-            display: flex;
-            gap: 5px;
-            margin-top: 3px;
-        }
-
-
-        #ivac-captcha-input-container {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
-
-        #ivac-captcha-input {
-            flex: 1;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 6px;
-            font-size: 11px;
-            height: 28px;
-            width: 140px;
-        }
-
-        #ivac-captcha-verify {
-            width: 50px;
-            height: 28px;
-            background: linear-gradient(145deg, #00b09b, #96c93d);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        #ivac-captcha-verify:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Payment Link Styles */
-        #ivac-payment-link-container {
-            margin-top: 8px;
-            padding: 6px;
-            border: 1px dashed #6a11cb;
-            border-radius: 4px;
-            background: rgba(106,17,203,0.05);
-            text-align: center;
-            font-size: 11px;
-        }
-
-        #ivac-payment-link {
-            color: #2575fc;
-            font-size: 11px;
-            word-break: break-all;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        #ivac-payment-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Bottom Spacer */
-        #ivac-bottom-spacer {
-            height: 5px;
-        }
-
-.ivac-button{
-            background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 4px 12px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-
-        }
-        .ivac-button:hover{
-            background-color: #f5f5f5;
-            border-color: #ccc;
-            font-weight: bold;
-        }
-        .iavc-tab-content{
-            margin: 4px 0;
-            padding: 4px;
         }
 
         .d-none{
@@ -665,7 +199,7 @@
     let selectHighCommission = document.getElementById("select-high-commission");
     let selectIvacCenter = document.getElementById("select-ivac-center");
     let selectWebFile = document.getElementById("input-web-file");
-    let selectVisaType = document.getElementById("selecte-visa-type");
+    let selectVisaType = document.getElementById("select-visa-type");
     let selectFamilyCount = document.getElementById("select-family-count");
     let showFamilyMemberData = document.getElementById("show-family-member-data");
     let selectVisitPurpose = document.getElementById("select-visit-purpose");
@@ -1033,12 +567,9 @@
                 captchaInfo.captcha_text = data.data.captcha;
 
                 // Display captcha in the panel
-                const captchaImageContainer = document.getElementById('ivac-captcha-image-container');
+                const captchaImageContainer = document.getElementById('captcha-container');
                 if (captchaImageContainer) {
-                    // Clear previous image if any
                     captchaImageContainer.innerHTML = '';
-
-                    // Create new image element
                     const img = document.createElement('img');
                     img.id = 'ivac-captcha-image';
                     img.src = data.data.captcha_image;
@@ -1069,7 +600,7 @@
 
     // ========== Verify Captcha Function ==========
     async function verifyCaptcha() {
-        const captchaInput = document.getElementById('ivac-captcha-input').value;
+        const captchaInput = document.getElementById('captcha-input').value;
         if (!captchaInput) {
             setMessage("Please enter the captcha text");
             return;
@@ -1109,8 +640,8 @@
                 setMessage("Captcha verified successfully!");
 
                 // Clear captcha input after successful verification
-                document.getElementById('ivac-captcha-input').value = '';
-                paymentInfo(data.data);
+                document.getElementById('captcha-input').value = '';
+                await paymentInfo(data.data);
             } else {
                 console.error("Captcha verification failed:", response.status);
                 setMessage("Captcha verification failed!");
@@ -1356,37 +887,17 @@
     // ==================== Smart Panel Creation ====================
 
     // Create the smart panel container
-    const smartPanel = document.createElement('div');
-    smartPanel.id = 'ivac-smart-panel';
-
-    // Panel header
-    const panelHeader = document.createElement('div');
-    panelHeader.id = 'ivac-smart-panel-header';
-
-    // Panel title
-    const panelTitle = document.createElement('div');
-    panelTitle.id = 'ivac-smart-panel-title';
-    panelTitle.innerHTML = `Rupon Modernization`;
-
-    const panelClose = document.createElement('button');
-    panelClose.id = 'ivac-smart-panel-close';
-    panelClose.innerHTML = '&times;';
-    panelClose.addEventListener('click', function (e) {
-        e.stopPropagation();
-        smartPanel.classList.remove('visible');
-    });
-
-    panelHeader.appendChild(panelTitle);
-    panelHeader.appendChild(panelClose);
-    smartPanel.appendChild(panelHeader);
 
 
-    const dataRow = document.createElement('div');
-    dataRow.className = 'ivac-btn-row';
-    async function verifyMobile() {
+    async function sendLoginOtp() {
         const mobile = document.getElementById('ivac-userMobile').value;
+        const password = document.getElementById('ivac-password').value;
         if (!mobile) {
             setMessage("Please enter a mobile number");
+            return;
+        }
+        if (!password) {
+            setMessage("Please enter a password");
             return;
         }
         const response = await fetch("https://api-payment.ivacbd.com/api/v2/mobile-verify", {
@@ -1403,42 +914,32 @@
         if (response.ok) {
             const data = await response.json();
             setMessage(data.message);
+            const loginResponse = await fetch("https://api-payment.ivacbd.com/api/v2/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    mobile_no: mobile,
+                    password: password,
+                })
+            });
+
+            if (loginResponse.ok) {
+                const data = await loginResponse.json();
+                setMessage(data.message);
+            } else {
+                setMessage(loginResponse.message);
+            }
 
         } else {
-            console.error("Login failed");
             setMessage(response.message);
         }
     }
 
-    async function verifyPassword() {
-        const mobile = document.getElementById('ivac-userMobile').value;
-        const password = document.getElementById('ivac-password').value;
-        if (!password) {
-            setMessage("Please enter a password");
-            return;
-        }
-        const response = await fetch("https://api-payment.ivacbd.com/api/v2/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({
-                mobile_no: mobile,
-                password: password,
-            })
-        });
 
-        if (response.ok) {
-            const data = await response.json();
-            setMessage(data.message);
-        } else {
-            console.error("Login failed");
-            setMessage(response.message);
-        }
-    }
-
-    async function verifyOTP() {
+    async function verifyLoginOtp() {
         const mobile = document.getElementById('ivac-userMobile').value;
         const password = document.getElementById('ivac-password').value;
         const otp = document.getElementById('ivac-otp').value;
@@ -1478,41 +979,35 @@
         });
     }
 
-    const tabBar = document.createElement('div');
-    tabBar.id = "ivac-tab-bar";
-    tabBar.classList = "text-sm";
-    tabBar.innerHTML = `
-        <p id="ivac-message" style="color: red; padding: 12px 0px;"></p>
-            <div class="flex gap-1 flex-wrap bg-green-600 text-white text-sm">
-                <button id="ivac-tab-0" class="py-2 px-4 cursor-pointer">Login</button>
-                <button id="ivac-tab-1" class="py-2 px-4 cursor-pointer">Info</button>
-                <button id="ivac-tab-2" class="py-2 px-4 cursor-pointer">Otp</button>
-                <button id="ivac-tab-3" class="py-2 px-4 cursor-pointer">Slot</button>
-                <button id="ivac-tab-4" class="py-2 px-4 cursor-pointer">user</button>
+    const htmlData = document.createElement('div');
+    htmlData.id = "ivac-smart-panel";
+    htmlData.classList = "flex flex-col gap-2 bg-white rounded-lg shadow-lg position-relative";
+    htmlData.innerHTML = `
+        <div id="smart-panel-header" class="flex gap-1 py-1 rounded items-center justify-between bg-green-600 text-sm cursor-move position-absolute">
+            <h3 class="text-white mx-4">IVAC Smart Panel</h3>
+            <button id="close-button" class="cursor-pointer me-1 p-1 rounded bg-gray-200 hover:bg-gray-300 text-red-600"><i class="bi bi-x-circle"></i></button>
+        </div>
+        <div class="flex flex-col gap-2">
+            <p id="ivac-message" style="color: red; padding: 12px 0px;"></p>
+            <div class="flex gap-1 flex-wrap rounded bg-green-600 text-white text-sm">
+                <button id="ivac-tab-0" class="p-2 cursor-pointer">Login</button>
+                <button id="ivac-tab-1" class="p-2 cursor-pointer">Info</button>
+                <button id="ivac-tab-2" class="p-2 cursor-pointer">Otp</button>
+                <button id="ivac-tab-3" class="p-2 cursor-pointer">Slot</button>
+                <button id="ivac-tab-4" class="p-2 cursor-pointer">user</button>
             </div>
             <div class="ivac-tab-content-body" style="padding: 12px 0px; width: 100%;">
-                <div id="ivac-tab-0" class="ivac-tab-content d-none">
-                    <div class="flex flex-col gap-2 items-center justify-space-between">
-                        <div class="flex gap-2">
-                            <input type="text" id="ivac-userMobile" name="mobile" required placeholder="Enter mobile number" class="py-2 px-4 rounded border border-gray-300 ">
-                            <button id="ivac-mobile-verify-btn" class="py-2 px-4 rounded bg-green-600 text-white" type="button"
-                               >Verify</button>
+                <div id="ivac-tab-0" class="ivac-tab-content">
+                    <div class="flex flex-col gap-2 w-full">
+                        <div class="flex flex-col gap-2">
+                            <input type="text" id="ivac-userMobile" name="mobile" required placeholder="Enter mobile number" class="py-1 px-2 rounded border border-gray-300">
+                            <input type="password" id="ivac-password" name="password" required placeholder="Enter password" class="py-1 px-2 rounded border border-gray-300">
+                            <button id="send-login-otp-button" class="py-1 px-2 rounded bg-green-600 text-white w-fit" type="button">Send OTP</button>
                         </div>
     
-                        <div
-                            style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
-                            <input type="password" id="ivac-password" name="password" required placeholder="Enter password"
-                                style="padding: 2px 4px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;">
-                            <button id="ivac-password-verify-btn" class="ivac-panel-btn" type="button"
-                                style="width: 100%;">Verify</button>
-                        </div>
-    
-                        <div
-                            style="display:flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%;">
-                            <input type="text" id="ivac-otp" name="otp" required placeholder="Enter OTP"
-                                style="padding: 2px 4px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;">
-                            <button id="ivac-otp-verify-btn" class="ivac-panel-btn" type="button"
-                                style="width: 100%;">Verify</button>
+                        <div class="flex flex-col gap-2">
+                            <input type="text" id="ivac-otp" name="otp" required placeholder="Enter OTP" class="py-1 px-2 rounded border border-gray-300">
+                            <button id="login-otp-verify-button" class="py-1 px-2 rounded bg-green-600 text-white w-fit" type="button">Verify</button>
                         </div>
                     </div>
                 </div>
@@ -1590,10 +1085,19 @@
                     <div id="slot-captcha-content">
                     <input id="date-input" class="p-3 bg-gray-200 border border-gray-300" type="date">
                     <button id="slot-button">Get Slots</button>
+                    <div id="ivac-slot-display">No slots Selected</div>
+                    <div id="captcha-container" class="w-2/3">
                     
-                    
-                    
-                    
+                    </div>
+                    <button id="captcha-generate-button" class="py-2 px-4 rounded bg-green-600 text-white" type="button">Generate</button>
+                   <div>
+                        <input id="captcha-input" type="text" placeholder="Enter Captcha">
+                        <button id="captcha-verify-button" class="py-2 px-4 rounded bg-green-600 text-white" type="button">Verify</button>
+                    </div>
+                    <div class="flex justify-end">
+                        <button id="paynow-button" class="py-2 px-4 rounded bg-green-600 text-white">Pay Now</button>
+                        <p id="payment-link-container" style="display: none;"></p>
+                    </div>
                     
                     
                     
@@ -1605,48 +1109,47 @@
                     <button id="ivac-logout-btn" class="ivac-panel-btn ivac-button" type="button">Logout</button>
                 </div>
             </div>
+            
+        </div>
         `;
 
+    htmlData.querySelector('#ivac-tab-0').addEventListener('click', function (e) {
+        toggleTab(0);
+    });
 
+    htmlData.querySelector('#close-button').addEventListener('click', () => {
+        htmlData.classList.remove('visible');
+    });
 
+    htmlData.querySelector('#send-login-otp-button').addEventListener('click', sendLoginOtp);
+    htmlData.querySelector('#login-otp-verify-button').addEventListener('click', verifyLoginOtp);
 
-
-
-    let mobileBtn = tabBar.querySelector('#ivac-mobile-verify-btn');
-    mobileBtn && mobileBtn.addEventListener('click', verifyMobile);
-
-    let passwordBtn = tabBar.querySelector('#ivac-password-verify-btn');
-    passwordBtn && passwordBtn.addEventListener('click', verifyPassword);
-    let otpBtn = tabBar.querySelector('#ivac-otp-verify-btn');
-    otpBtn && otpBtn.addEventListener('click', verifyOTP);
-
-    tabBar.querySelector('#ivac-app-submit-btn').addEventListener('click', async function (e) {
+    htmlData.querySelector('#ivac-app-submit-btn').addEventListener('click', async function (e) {
         await sendDataToServer();
     });
 
-    tabBar.querySelector('#ivac-personal-submit-btn').addEventListener('click', async function (e) {
+    htmlData.querySelector('#ivac-personal-submit-btn').addEventListener('click', async function (e) {
         await submitPersonalInfo();
     });
 
-    tabBar.querySelector('#ivac-overview-btn').addEventListener('click', async function (e) {
+    htmlData.querySelector('#ivac-overview-btn').addEventListener('click', async function (e) {
         await sendOverviewRequest();
     });
-    tabBar.querySelector('#ivac-send-otp-btn').addEventListener('click', async function (e) {
+    htmlData.querySelector('#ivac-send-otp-btn').addEventListener('click', async function (e) {
         await sendOTP(false);
     });
 
-    tabBar.querySelector('#ivac-resend-otp-btn').addEventListener('click', async function (e) {
+    htmlData.querySelector('#ivac-resend-otp-btn').addEventListener('click', async function (e) {
         await sendOTP(true);
     });
-    tabBar.querySelector('#ivac-otp-verify-btn').addEventListener('click', async function (e) {
+    htmlData.querySelector('#ivac-otp-verify-btn').addEventListener('click', async function (e) {
         const otpInput = tabBar.querySelector('#ivac-otp-input');
         if (otpInput) {
             await verifyOTP(otpInput.value);
         }
     });
 
-    tabBar.querySelector('#ivac-tab-1').addEventListener('click', function (e) {
-
+    htmlData.querySelector('#ivac-tab-1').addEventListener('click', function (e) {
 
         toggleTab(1);
         // Update the saved data in the modal
@@ -1681,17 +1184,13 @@
 
     });
 
-    tabBar.querySelector('#ivac-tab-0').addEventListener('click', function (e) {
-        toggleTab(0);
-    });
 
-
-    tabBar.querySelector('#ivac-tab-1').addEventListener('click', function (e) {
+    htmlData.querySelector('#ivac-tab-1').addEventListener('click', function (e) {
         toggleTab(1);
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-        familyCount = tabBar.getElementById("select-family-count").value || 0;
+        familyCount = htmlData.getElementById("select-family-count").value || 0;
         if (familyCount > 0) {
             for (let i = 0; i < familyCount; i++) {
                 document.getElementById("ivac-family-member-data").innerHTML = `
@@ -1704,144 +1203,40 @@
     })
 
 
-    tabBar.querySelector('#ivac-tab-2').addEventListener('click', function (e) {
+    htmlData.querySelector('#ivac-tab-2').addEventListener('click', function (e) {
         toggleTab(2);
     });
 
 
-    tabBar.querySelector('#ivac-tab-3').addEventListener('click', function (e) {
+    htmlData.querySelector('#ivac-tab-3').addEventListener('click', function (e) {
         toggleTab(3);
     });
-    tabBar.querySelector('#slot-button').addEventListener('click', function (e) {
+    htmlData.querySelector('#slot-button').addEventListener('click', function (e) {
         getSlotTimes();
+    });
+    htmlData.querySelector("#captcha-generate-button").addEventListener('click', async () => {
+        await generateCaptcha();
+    });
+    htmlData.querySelector("#captcha-verify-button").addEventListener('click', async () => {
+        await verifyCaptcha();
+    });
+    htmlData.querySelector("#paynow-button").addEventListener('click', async () => {
+        await payNow();
     });
 
 
-
-    tabBar.querySelector('#ivac-tab-4').addEventListener('click', function (e) {
+    htmlData.querySelector('#ivac-tab-4').addEventListener('click', function (e) {
         toggleTab(4);
     });
 
-    dataRow.appendChild(tabBar);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // Seventh row - Slot display
-    const slotDisplay = document.createElement('div');
-    slotDisplay.id = 'ivac-slot-display';
-    slotDisplay.textContent = 'No slot selected';
-    dataRow.appendChild(slotDisplay);
-
-    // Eighth row - Captcha section
-    const captchaSection = document.createElement('div');
-    captchaSection.id = 'ivac-captcha-section';
-
-    const captchaContainer = document.createElement('div');
-    captchaContainer.id = 'ivac-captcha-container';
-    captchaContainer.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between; height: 100%; gap: 8px; padding: 8px 0px;">
-        <div style="display: flex; align-items: center; justify-content: center; height: 100%;">CAPTCHA</div>
-        <button id="ivac-captcha-generate-button" class="ivac-panel-btn ivac-button" type="button">Generate</button>
-    </div>`;
-
-    captchaContainer.querySelector('#ivac-captcha-generate-button').addEventListener('click', async function (e) {
-        await generateCaptcha();
-    });
-
-    const captchaInputContainer = document.createElement('div');
-    captchaInputContainer.id = 'ivac-captcha-input-container';
-
-    const captchaInput = document.createElement('input');
-    captchaInput.id = 'ivac-captcha-input';
-    captchaInput.type = 'text';
-    captchaInput.placeholder = 'Enter CAPTCHA';
-    captchaInputContainer.appendChild(captchaInput);
-
-    // Verify button
-    const verifyCaptchaBtn = document.createElement('button');
-    verifyCaptchaBtn.id = 'ivac-captcha-verify';
-    verifyCaptchaBtn.textContent = 'Verify';
-    verifyCaptchaBtn.addEventListener('click', function (e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        verifyCaptcha();
-    });
-    captchaInputContainer.appendChild(verifyCaptchaBtn);
-    captchaContainer.appendChild(captchaInputContainer);
-
-    // Generate and Pay Now buttons row
-    const captchaButtonsRow = document.createElement('div');
-    captchaButtonsRow.id = 'ivac-captcha-buttons-row';
-    captchaButtonsRow.style = 'display: flex; justify-content: center; align-items: center;';
-
-    // Pay Now button
-    const payNowBtn = document.createElement('button');
-    payNowBtn.id = 'ivac-pay-now-btn';
-    payNowBtn.className = 'ivac-button';
-    payNowBtn.style = 'margin:12px auto; padding: 8px 12px; font-size: 14px; background: #016806ff; color: #ffffff;';
-    payNowBtn.textContent = 'Pay Now';
-    payNowBtn.addEventListener('click', function (e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        payNow();
-    });
-    captchaButtonsRow.appendChild(payNowBtn);
-
-    captchaContainer.appendChild(captchaButtonsRow);
-
-    captchaSection.appendChild(captchaContainer);
-
-    // Payment link container
-    const paymentLinkContainer = document.createElement('div');
-    paymentLinkContainer.id = 'ivac-payment-link-container';
-    paymentLinkContainer.style.display = 'none';
-    dataRow.appendChild(paymentLinkContainer);
-
-    // Bottom spacer
-    const bottomSpacer = document.createElement('div');
-    bottomSpacer.id = 'ivac-bottom-spacer';
-
-    // Add all rows to panel
-    smartPanel.appendChild(dataRow);
-    smartPanel.appendChild(captchaSection);
-
-    const bottomRow = document.createElement('div');
-    bottomRow.className = 'ivac-bottom-row';
-    bottomRow.innerHTML = `
-    <div id="ivac-bottom-row-content">
-    <p style="font-size: 10px;">Payment Information:</p>
-    </div>
-    `;
     const paymentInfo = (paymentDetails) => {
-        const content = document.getElementById('ivac-bottom-row-content');
+        const content = document.getElementById('payment-link-container');
         content.innerHTML = paymentDetails;
     };
 
+    document.body.appendChild(htmlData);
 
-
-    smartPanel.appendChild(bottomRow);
-    smartPanel.appendChild(bottomSpacer);
-    document.body.appendChild(smartPanel);
 
     // Create toggle button for the panel (fixed position)
     const togglePanelBtn = document.createElement('button');
@@ -1849,33 +1244,33 @@
     togglePanelBtn.innerHTML = '⚙️';
     togglePanelBtn.addEventListener('click', function (e) {
         e.stopPropagation();
-        smartPanel.classList.toggle('visible');
+        htmlData.classList.toggle('visible');
     });
     document.body.appendChild(togglePanelBtn);
 
+    let link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css';
+    document.head.appendChild(link);
+
     // Handle clicks outside the panel to close it
     document.addEventListener('click', function (e) {
-        if (!smartPanel.contains(e.target) && e.target !== togglePanelBtn) {
-            smartPanel.classList.remove('visible');
+        if (!htmlData.contains(e.target) && e.target !== togglePanelBtn) {
+            htmlData.classList.remove('visible');
         }
     });
 
     // Prevent panel clicks from bubbling up when panel is visible
-    smartPanel.addEventListener('click', function (e) {
-        if (smartPanel.classList.contains('visible')) {
+    htmlData.addEventListener('click', function (e) {
+        if (htmlData.classList.contains('visible')) {
             e.stopPropagation();
         }
     });
 
 
-
-
-
-
-
     // Make panel draggable
-    $(smartPanel).draggable({
-        handle: '#ivac-smart-panel-header',
+    $(htmlData).draggable({
+        handle: '#smart-panel-header',
         containment: 'window',
         scroll: false,
         start: function () {
@@ -1906,7 +1301,7 @@
         // Load saved panel position and size
         const panelSettings = GM_getValue('ivacPanelSettings', null);
         if (panelSettings) {
-            $(smartPanel).css({
+            $(htmlData).css({
                 top: panelSettings.top + 'px',
                 left: panelSettings.left + 'px'
             });
