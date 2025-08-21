@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         IVAC Panel New Server
 // @namespace    http://tampermonkey.net/
-// @version      7.0
+// @version      8.0
 // @description  Panel with captcha functionality and Pay Now button
 // @author       You
 // @match        https://nhrepon-portfolio.vercel.app/*
@@ -9,12 +9,10 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
-// @require      https://code.jquery.com/jquery-3.6.0.min.js
-// @require      https://code.jquery.com/ui/1.13.1/jquery-ui.min.js
 // @require      https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4
 // ==/UserScript==
 
-(async function () {
+(function () {
     'use strict';
 
     GM_addStyle(`
@@ -130,7 +128,7 @@
 
     `);
 
-    let highCommission = null;
+    let highCommission = 4;
     let webFileId = null;
     let ivacId = null;
     let visaType = null;
@@ -163,39 +161,11 @@
 
     const setMessage = (msg) => document.getElementById("ivac-message").textContent = msg;
 
-    // Load saved data from storage
-    function loadSavedData() {
-        highCommission = GM_getValue('highcom', 4);
-        webFileId = GM_getValue('webfile_id', null);
-        ivacId = GM_getValue('ivac_id', 4);
-        visaType = GM_getValue('visa_type', null);
-        familyCount = GM_getValue('family_count', 0);
-        visitPurpose = GM_getValue('visit_purpose', null);
-        fullName = GM_getValue('full_name', null);
-        email = GM_getValue('email_name', null);
-        phone = GM_getValue('phone', null);
-        familyName = GM_getValue('familyName', null);
-        familyWebFileId = GM_getValue('familyWebFileNo', null);
-        familyMembers = GM_getValue('familyMembers', []);
-    }
-
-    // Save data to storage
-    function saveData() {
-        GM_setValue('highcom', highCommission);
-        GM_setValue('webfile_id', webFileId);
-        GM_setValue('ivac_id', ivacId);
-        GM_setValue('visa_type', visaType);
-        GM_setValue('family_count', familyCount);
-        GM_setValue('visit_purpose', visitPurpose);
-        GM_setValue('full_name', fullName);
-        GM_setValue('email_name', email);
-        GM_setValue('phone', phone);
-        GM_setValue('familyName', familyName);
-        GM_setValue('familyWebFileNo', familyWebFileId);
-        GM_setValue('familyMembers', familyMembers);
-        GM_setValue('authToken', authToken);
-    }
-
+    let userMobileInput = document.getElementById("userMobile");
+    let userPasswordInput = document.getElementById("userPassword");
+    let sendLoginOtpButton = document.getElementById("send-login-otp-button");
+    let otpInput = document.getElementById("otp");
+    let verifyLoginOtpButton = document.getElementById("verify-login-otp-button");
 
     let selectHighCommission = document.getElementById("select-high-commission");
     let selectIvacCenter = document.getElementById("select-ivac-center");
@@ -207,6 +177,27 @@
     let selectFullName = document.getElementById("input-full_name");
     let selectEmail = document.getElementById("input-email");
     let selectPhone = document.getElementById("input-phone");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     // ========== Application Submit Function ==========
@@ -805,23 +796,7 @@
         }
     }
 
-    function updateIvacCenters(selectedHighCommission) {
 
-        const ivacCenters = {
-            1: [[9, "IVAC, BARISAL"], [12, "IVAC, JESSORE"], [17, "IVAC, Dhaka (JFP)"], [20, "IVAC, SATKHIRA"]],
-            2: [[5, "IVAC, CHITTAGONG"], [21, "IVAC, CUMILLA"], [22, "IVAC, NOAKHALI"], [23, "IVAC, BRAHMANBARIA"]],
-            3: [[2, "IVAC , RAJSHAHI"], [7, "IVAC, RANGPUR"], [18, "IVAC, THAKURGAON"], [19, "IVAC, BOGURA"], [24, "IVAC, KUSHTIA"]],
-            4: [[4, "IVAC, SYLHET"], [8, "IVAC, MYMENSINGH"]],
-            5: [[3, "IVAC, KHULNA"]]
-        };
-
-        ivacCenters[selectedHighCommission]?.forEach(([value, name]) => {
-            const option = document.createElement('option');
-            option.value = value;
-            option.text = name;
-            selectIvacCenter.appendChild(option);
-        });
-    }
 
 
     async function fetchAuthToken() {
@@ -851,39 +826,6 @@
         }
     }
 
-    // Initialize IVAC centers
-    updateIvacCenters(highCommission);
-
-
-    // document.getElementById('ivac-modal-save').addEventListener('click', function () {
-    //     webFileId = selectWebFile.value || null;
-    //     familyCount = parseInt(selectFamilyCount.value) || 0;
-    //     highCommission = parseInt(selectHighCommission.value) || 4;
-    //     ivacId = parseInt(selectIvacCenter.value) || 4;
-    //     visaType = parseInt(selectVisaType.value);
-    //     visitPurpose = selectVisitPurpose.value;
-    //     fullName = selectFullName.value;
-    //     email = selectEmail.value;
-    //     phone = selectPhone.value;
-    //     familyName = showFamilyMemberData.querySelector('input').value || null;
-    //     familyWebFileId = selectWebFile.value ? selectWebFile.value.replace(/(.{6})$/, "A7C25") : null;
-    //
-    //     familyMembers = [];
-    //     const inputs = showFamilyMemberData.querySelectorAll('input');
-    //     inputs.forEach(input => {
-    //         const index = parseInt(input.dataset.index);
-    //         const type = input.dataset.type;
-    //         const value = input.value || null;
-    //
-    //         if (!familyMembers[index]) {
-    //             familyMembers[index] = {};
-    //         }
-    //         familyMembers[index][type] = value;
-    //     });
-    //
-    //     saveData();
-    // });
-    //
 
     // ==================== Smart Panel Creation ====================
 
@@ -974,7 +916,7 @@
     }
 
     function toggleTab(index) {
-        const contents = document.querySelectorAll(".ivac-tab-content");
+        const contents = document.querySelectorAll(".tab-content");
         contents.forEach((content, i) => {
             content.classList.toggle("d-none", i !== index);
         });
@@ -988,31 +930,31 @@
             <button id="close-button"><span class="-me-2 p-1 bg-gray-200 hover:bg-gray-300 rounded text-red-600"><i class="bi bi-x-circle"></i></span></button>
         </div>
         <div class="flex flex-col gap-2">
-            <p id="ivac-message" class="text-red-600 text-sm py-2"></p>
+            <p id="message" class="text-red-600 text-sm py-2"></p>
             <div class="flex gap-1 flex-wrap rounded bg-[#135d32] text-white text-sm">
-                <button id="ivac-tab-0">Login</button>
-                <button id="ivac-tab-1">Info</button>
-                <button id="ivac-tab-2">Otp</button>
-                <button id="ivac-tab-3">Slot</button>
-                <button id="ivac-tab-4">user</button>
+                <button id="tab-0">Login</button>
+                <button id="tab-1">Info</button>
+                <button id="tab-2">Otp</button>
+                <button id="tab-3">Slot</button>
+                <button id="tab-4">user</button>
             </div>
-            <div class="ivac-tab-content-body py-4 w-full overflow-y-auto h-[300px] text-sm">
-                <div id="ivac-tab-0" class="ivac-tab-content">
+            <div class="tab-content-body py-4 w-full overflow-y-auto h-[300px] text-sm">
+                <div id="tab-0" class="tab-content">
                     <div class="flex flex-col gap-2 w-full">
                         <div class="flex flex-col gap-2">
-                            <input type="text" id="ivac-userMobile" name="mobile" required placeholder="Enter mobile number">
-                            <input type="password" id="ivac-password" name="password" required placeholder="Enter password" >
+                            <input type="text" id="userMobile" name="mobile" required placeholder="Enter mobile number">
+                            <input type="password" id="userPassword" name="password" required placeholder="Enter password" >
                             <button id="send-login-otp-button" type="button">Send OTP</button>
                         </div>
     
                         <div class="flex flex-col gap-2">
-                            <input type="text" id="ivac-otp" name="otp" required placeholder="Enter OTP" >
-                            <button id="login-otp-verify-button" type="button">Verify</button>
+                            <input type="text" id="otp" name="otp" required placeholder="Enter OTP" >
+                            <button id="verify-login-otp-button" type="button">Verify</button>
                         </div>
                     </div>
                 </div>
-                <div id="ivac-tab-1" class="ivac-tab-content d-none">
-                    <div id="ivac-info-form" class="flex flex-col gap-2 w-full">
+                <div id="tab-1" class="tab-content d-none">
+                    <div id="info-form" class="flex flex-col gap-2 w-full">
                         <div>
                             <label for="high_commission">Select High Commission</label>
                             <select name="high_commission" id="select-high-commission">
@@ -1025,7 +967,6 @@
                         </div>
                         <div>
                             <select name="ivac_center" id="select-ivac-center">
-                                <option>Select IVAC Center</option>
                             </select>
                         </div>
                         <div>
@@ -1047,7 +988,7 @@
                             <option value="3">3</option>
                             <option value="4">4</option>
                         </select>
-                        <div id="show-family-member-data" style="display: none;">
+                        <div id="show-family-member-data">
                         
                         </div>
                         <div>
@@ -1058,25 +999,22 @@
                             <input name="email" id="input-email" type="email" placeholder="Enter Email">
                             <input name="phone" id="input-phone" type="tel" placeholder="Enter Phone Number">
                         </div>
-                        <div>
-                            <button id="ivac-modal-clear" class="ivac-modal-btn">Clear</button>
-                            <button id="ivac-modal-save" class="ivac-modal-btn">Save</button>
-                        </div>
+                        
                     </div>
                 </div>
-                <div id="ivac-tab-2" class="ivac-tab-content d-none">
+                <div id="tab-2" class="tab-content d-none">
                     
                     
                     <div>
                         <h5>OTP Verification</h5>
                         <div>
-                            <input type="text" id="ivac-otp-input" placeholder="Enter 6-digit OTP" maxLength="6" />
-                            <button id="ivac-otp-verify-btn" type="button">Verify</button>
-                            <button id="ivac-resend-otp-btn" type="button">Resend OTP</button>
+                            <input type="text" id="otp-input" placeholder="Enter 6-digit OTP" maxLength="6" />
+                            <button id="otp-verify-button" type="button">Verify</button>
+                            <button id="resend-otp-button" type="button">Resend OTP</button>
                         </div>
                     </div>
                 </div>
-                <div id="ivac-tab-3" class="ivac-tab-content d-none">
+                <div id="tab-3" class="tab-content d-none">
                     <div id="slot-captcha-content">
                         <input id="date-input" type="date">
                         <button id="slot-button">Get Slots</button>
@@ -1096,7 +1034,7 @@
                     
                     </div>
                 </div>
-                <div id="ivac-tab-4" class="ivac-tab-content d-none">
+                <div id="tab-4" class="tab-content d-none">
                     <div>
                         <button id="paynow-button">Pay Now</button>
                         <p id="payment-link-container" style="display: none;"></p>
@@ -1107,7 +1045,7 @@
         </div>
         `;
 
-    htmlData.querySelector('#ivac-tab-0').addEventListener('click', function (e) {
+    htmlData.querySelector('#tab-0').addEventListener('click', function (e) {
         toggleTab(0);
     });
 
@@ -1116,78 +1054,61 @@
     });
 
     htmlData.querySelector('#send-login-otp-button').addEventListener('click', sendLoginOtp);
-    htmlData.querySelector('#login-otp-verify-button').addEventListener('click', verifyLoginOtp);
+    htmlData.querySelector('#verify-login-otp-button').addEventListener('click', verifyLoginOtp);
 
-    htmlData.querySelector('#ivac-resend-otp-btn').addEventListener('click', async function (e) {
+    htmlData.querySelector('#resend-otp-button').addEventListener('click', async function (e) {
         await sendOTP(true);
     });
-    htmlData.querySelector('#ivac-otp-verify-btn').addEventListener('click', async function (e) {
-        const otpInput = tabBar.querySelector('#ivac-otp-input');
+    htmlData.querySelector('#otp-verify-button').addEventListener('click', async function (e) {
+        const otpInput = htmlData.querySelector('#otp-input');
         if (otpInput) {
             await verifyOTP(otpInput.value);
         }
     });
 
-    htmlData.querySelector('#ivac-tab-1').addEventListener('click', function (e) {
 
+
+
+
+    htmlData.querySelector('#tab-1').addEventListener('click', function (e) {
         toggleTab(1);
-        // Update the saved data in the modal
-
-        loadSavedData();
-
-        // Set current values in the modal
-        selectHighCommission.value = highCommission || 4;
-        selectWebFile.value = webFileId || "";
-        selectFamilyCount.value = familyCount || 0;
-        updateIvacCenters(selectHighCommission.value || 4);
-        setTimeout(() => {
-            selectIvacCenter.value = ivacId || 4;
-        }, 1000);
-        selectVisaType.value = visaType || 13;
-        selectVisitPurpose.value = visitPurpose || "Medical Visit";
-        selectFullName.querySelector('input').value = fullName || "";
-        selectEmail.querySelector('input').value = email || "";
-        selectPhone.querySelector('input').value = phone || "";
-
-        // Update family inputs with saved data
-        updateFamilyInputs();
-        setTimeout(() => {
-            familyMembers.forEach((member, index) => {
-                const nameInput = showFamilyMemberData.querySelector(`input[data-index="${index}"][data-type="name"]`);
-                const webfileInput = showFamilyMemberData.querySelector(`input[data-index="${index}"][data-type="webfile"]`);
-                if (nameInput) nameInput.value = member.name || "";
-                if (webfileInput) webfileInput.value = member.webfile || "";
-            });
-        }, 1000);
-
-
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        selectHighCommission.addEventListener('change', () => {
+            highCommission = parseInt(selectHighCommission.value);
+            updateIvacCenters(highCommission);
+        });
     });
 
 
-    htmlData.querySelector('#ivac-tab-1').addEventListener('click', function (e) {
-        toggleTab(1);
-    });
 
     htmlData.querySelector("#select-family-count").addEventListener('change', ()=>{
         familyCount = parseInt(document.getElementById("select-family-count").value);
         if (familyCount > 0) {
+            document.getElementById("show-family-member-data").innerHTML = '';
             for (let i = 0; i < familyCount; i++) {
-                document.getElementById("show-family-member-data").innerHTML = `
-                    <label for="family-member-name">Family Member ${i + 1}</label>
-                    <input type="text" placeholder="Name" id="family-member-name" >
-                    <input type="text" placeholder="Webfile" id="family-member-webfile">
+                document.getElementById("show-family-member-data").innerHTML += `
+                    <div class="family-member" id="family-member-${i}">
+                        <label for="family-member-name">Family Member ${i + 1}</label>
+                        <input type="text" placeholder="Name" id="family-member-name" >
+                        <input type="text" placeholder="Webfile" id="family-member-webfile">
+                    </div>
                 `;
             }
         }
     });
 
 
-    htmlData.querySelector('#ivac-tab-2').addEventListener('click', function (e) {
+
+
+
+
+    htmlData.querySelector('#tab-2').addEventListener('click', function (e) {
         toggleTab(2);
     });
 
 
-    htmlData.querySelector('#ivac-tab-3').addEventListener('click', function (e) {
+    htmlData.querySelector('#tab-3').addEventListener('click', function (e) {
         toggleTab(3);
     });
     htmlData.querySelector('#slot-button').addEventListener('click', function (e) {
@@ -1204,7 +1125,7 @@
     });
 
 
-    htmlData.querySelector('#ivac-tab-4').addEventListener('click', function (e) {
+    htmlData.querySelector('#tab-4').addEventListener('click', function (e) {
         toggleTab(4);
     });
 
@@ -1215,6 +1136,61 @@
     };
 
     document.body.appendChild(htmlData);
+
+
+
+
+
+
+
+
+
+
+
+
+    function updateIvacCenters(shc) {
+        const ivacCenters = {
+            1: [9, "IVAC, BARISAL", 12, "IVAC, JESSORE", 17, "IVAC, Dhaka (JFP)", 20, "IVAC, SATKHIRA"],
+            2: [5, "IVAC, CHITTAGONG", 21, "IVAC, CUMILLA", 22, "IVAC, NOAKHALI", 23, "IVAC, BRAHMANBARIA"],
+            3: [2, "IVAC , RAJSHAHI", 7, "IVAC, RANGPUR", 18, "IVAC, THAKURGAON", 19, "IVAC, BOGURA", 24, "IVAC, KUSHTIA"],
+            4: [4, "IVAC, SYLHET", 8, "IVAC, MYMENSINGH"],
+            5: [3, "IVAC, KHULNA"]
+        };
+        const centers = ivacCenters[shc];
+        if (centers) {
+            for (let i = 0; i < centers.length; i += 2) {
+                const value = centers[i];
+                const name = centers[i + 1];
+
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = name;
+                selectIvacCenter.appendChild(option);
+            }
+            console.log(selectIvacCenter + " " + ivacCenters[shc] + " " + centers + " " + name + " " + value);
+        }
+        console.log("updateIvacCenters called");
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     // Create toggle button for the panel (fixed position)
@@ -1247,55 +1223,43 @@
     });
 
 
-    // Make panel draggable
-    $(htmlData).draggable({
-        handle: '#panel-header',
-        containment: 'window',
-        scroll: false,
-        start: function () {
-            $(this).css('transition', 'none');
-        },
-        stop: function () {
-            $(this).css('transition', 'all 0.3s ease');
-            savePanelSettings();
-        }
-    });
 
-    // Function to save panel position
-    function savePanelSettings() {
-        const panel = $('#smart-panel');
-        const settings = {
-            top: parseInt(panel.css('top')),
-            left: parseInt(panel.css('left')),
-            width: parseInt(panel.css('width')),
-            height: parseInt(panel.css('height'))
-        };
-        GM_setValue('ivacPanelSettings', settings);
-    }
+    htmlData.draggable=true;
+
+    htmlData.ondragstart = function() {
+        return false;
+    };
+    htmlData.ondrag = function() {
+        return false;
+    };
+    htmlData.ondragend = function() {
+        GM_setValue('panelPosition', { left: htmlData.style.left, top: htmlData.style.top });
+        return true;
+    };
+
 
     // Initialize all data when script starts
     async function init() {
-        loadSavedData();
 
-        // Load saved panel position and size
-        const panelSettings = GM_getValue('ivacPanelSettings', null);
+        const panelSettings = GM_getValue('panelPosition', null);
         if (panelSettings) {
-            $(htmlData).css({
-                top: panelSettings.top + 'px',
-                left: panelSettings.left + 'px'
-            });
-        }
-        if (!authToken) {
-            //await fetchAuthToken();
+            htmlData.style.left = panelSettings.left;
+            htmlData.style.top = panelSettings.top;
         }
     }
+
+
+
+
+
+    document.addEventListener('DOMContentLoaded', init);
 
     // Run initialization
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        await init();
-    }
+    // if (document.readyState === 'loading') {
+    //     document.addEventListener('DOMContentLoaded', init);
+    // } else {
+    //     init();
+    // }
 
 
 })();
