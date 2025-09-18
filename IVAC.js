@@ -1,2210 +1,975 @@
-// ==UserScript==
-// @name         IVAC Panel New Server Final
-// @namespace    http://tampermonkey.net/
-// @version      5.5
-// @description  Panel with captcha functionality and Pay Now button
-// @author       You
-// @match        https://nhrepon-portfolio.vercel.app/*
-// @grant        GM_openInTab
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @grant        GM_addStyle
-// @require      https://code.jquery.com/jquery-3.6.0.min.js
-// @require      https://code.jquery.com/ui/1.13.1/jquery-ui.min.js
-// ==/UserScript==
+// --- Global Variables & Configuration ---
+const API_BASE_URL = "https://payment.ivacbd.com/api/v2";
+const CAPSOLVER_API_KEY = "CAP-ADF28423681FE80E495EAA63B0C91E3E7812C2815AD0DA28692B530CB3EF571F"; // Enter your actual CapSolver API Key here
 
-(function() {
-    'use strict';
+const app_info_submit_endpoint = "payment/application-r5s7h3-submit-hyju6t";
+const pay_now_endpoint = "payment/h7j3wt-now-y0k3d6";
 
-    // Add CSS styles for the panel
-    GM_addStyle(`
-        /* Smart Panel Styles */
+let captcha_token = null;
+let isStopping = false;
+let currentRequestController = null;
+let isOtpSent = false;
+let panelVisible = false; // MODIFIED: Always start with false, ignoring saved state
+
+// --- Panel Styles ---
+GM_addStyle(`
         #ivac-smart-panel {
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            background: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            padding: 8px;
-            z-index: 9999;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            transform: translateY(20px);
-            opacity: 0;
-            transition: all 0.3s ease;
-            width: 300px;
-            height: 450px;
-            overflow-y: auto;
-            pointer-events: none;
+            position: fixed; top: 20px; left: 20px; background: #f5f5f5; /* Light grayish white */
+            border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 10px; z-index: 9999; border: 1px solid #dcdcdc;
+            transform: translateX(-20px); opacity: 0; transition: all 0.3s ease;
+            width: 310px !important; /* MODIFIED: Increased width */
+            height: auto !important; max-height: 570px; overflow-y: auto;
+            pointer-events: none; color: #000000;
         }
-
-        #ivac-smart-panel.visible {
-            transform: translateY(0);
-            opacity: 1;
-            pointer-events: auto;
-        }
-
+        #ivac-smart-panel.visible { transform: translateX(0); opacity: 1; pointer-events: auto; }
         #ivac-smart-panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 6px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            cursor: move;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;
+            cursor: move; /* Added cursor to indicate draggability */
         }
-
         #ivac-smart-panel-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #2c3e50;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: pulseZoom 2s infinite alternate;
-            margin: 0 auto;
+            font-size: 16px; font-weight: bold; color: #000000; display: flex;
+            align-items: center; gap: 8px; animation: pulseZoom 2s infinite alternate; margin: 0 auto;
         }
-
-        @keyframes pulseZoom {
-            0% { transform: scale(0.95); }
-            100% { transform: scale(1.05); }
-        }
-
+        @keyframes pulseZoom { 0% { transform: scale(0.95); } 100% { transform: scale(1.05); } }
         #ivac-smart-panel-close {
-            background: none;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            color: #7f8c8d;
-            padding: 0;
-            line-height: 1;
-            transition: all 0.2s ease;
+            background: none; border: none; font-size: 18px; cursor: pointer;
+            color: #666666; padding: 0; line-height: 1; transition: all 0.2s ease;
         }
-
-        #ivac-smart-panel-close:hover {
-            color: #e74c3c;
-            transform: scale(1.2);
+        #ivac-smart-panel-close:hover { color: #e74c3c; transform: scale(1.2); }
+        #status-display {
+            padding: 8px 10px; border-radius: 6px; font-size: 13px; border: 1px solid #e0e0e0;
+            text-align: center; margin-bottom: 10px; background: #f8f9fa;
         }
-
-        #ivac-smart-panel-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
+        #status-display.status-success .status-text { color: #198754; font-weight: 600; }
+        #status-display.status-error .status-text { color: #dc3545; font-weight: 600; }
+        #status-display .status-text { color: #333; }
+        #ivac-panel-tabs {
+            display: flex; margin-bottom: 10px; border-bottom: 1px solid #e0e0e0;
+            background: #f5f5f5; border-radius: 6px; overflow: hidden;
         }
-
+        .ivac-tab {
+            flex: 1; text-align: center; padding: 8px 0; cursor: pointer; font-size: 12px;
+            font-weight: bold; transition: all 0.2s ease; color: #666666;
+            display: flex; align-items: center; justify-content: center; gap: 6px; /* MODIFIED FOR ICONS */
+        }
+        /* MODIFIED: SVG icon styling */
+        .ivac-tab svg {
+            width: 14px; height: 14px; fill: currentColor;
+        }
+        /* === NEW: VIBRANT ACTIVE TAB COLORS === */
+        .ivac-tab.active { background: rgba(52, 152, 219, 0.2); color: #000000; }
+        .ivac-tab[data-tab="login"].active { background: linear-gradient(135deg, #6a11cb, #2575fc); color: white; }
+        .ivac-tab[data-tab="home"].active { background: linear-gradient(135deg, #11998e, #38ef7d); color: white; }
+        .ivac-tab[data-tab="file"].active { background: linear-gradient(135deg, #f46b45, #eea849); color: white; }
+        .ivac-tab-content { display: none; }
+        .ivac-tab-content.active { display: block; }
+        #ivac-smart-panel-buttons { display: flex; flex-direction: column; gap: 5px; }
         .ivac-panel-btn {
-            padding: 6px 8px;
-            border-radius: 6px;
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            position: relative;
-            overflow: hidden;
-            font-size: 12px;
-            margin-bottom: 3px;
+            padding: 8px 10px; border-radius: 6px; border: none; color: white; font-weight: bold;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 12px; margin-bottom: 5px;
         }
-
-        .ivac-panel-btn::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(255,255,255,0.1), rgba(255,255,255,0.1));
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-
-        .ivac-panel-btn:hover::after {
-            opacity: 1;
-        }
-
-        .ivac-panel-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        #ivac-settings-btn {
-            background: linear-gradient(145deg, #5a0080, #9932cc);
-        }
-
-        #ivac-app-submit-btn {
-            background: linear-gradient(145deg, #11998e, #38ef7d);
-        }
-
-        #ivac-personal-submit-btn {
-          background: linear-gradient(145deg, #f46b45, #eea849);
-        }
-
-        #ivac-overview-btn {
-            background: linear-gradient(145deg, #8e2de2, #4a00e0);;
-        }
-
-        #ivac-payment-btn {
-            background: linear-gradient(145deg, #228B22, #006400);
-        }
-        #ivac-stop-all-btn {
-            background: linear-gradient(145deg, #ff416c, #ff4b2b);
-        }
-        #ivac-send-otp-btn {
-            background: linear-gradient(145deg, #00b09b, #96c93d);
-        }
-        #ivac-resend-otp-btn {
-            background: linear-gradient(145deg, #00c6ff, #0072ff);
-        }
-        #ivac-verify-otp-btn {
-            background: linear-gradient(145deg, #f12711, #f5af19);
-        }
+        .stop-btn { background: linear-gradient(145deg, #e74c3c, #c0392b) !important; }
+        .ivac-panel-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); }
+        #ivac-app-submit-btn { background: linear-gradient(145deg, #11998e, #38ef7d); flex: 1; }
+        #ivac-personal-submit-btn { background: linear-gradient(145deg, #f46b45, #eea849); flex: 1; }
+        #ivac-overview-btn { background: linear-gradient(145deg, #8e2de2, #4a00e0); flex: 1; }
         #ivac-toggle-panel {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            background: linear-gradient(145deg, #6a11cb, #2575fc);
-            color: white;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
+            position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
+            border-radius: 50%; background: linear-gradient(145deg, #6a11cb, #2575fc);
+            color: white; border: none; font-size: 20px; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); z-index: 10000;
+            display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;
+        }
+        #ivac-toggle-panel:hover { transform: scale(1.1); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
+        .ivac-form-group { margin-bottom: 10px; }
+        .ivac-form-group label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 12px; }
+        .ivac-form-group input, .ivac-form-group select, .ivac-form-group textarea {
+            width: 100%; padding: 8px; border: 1px solid #d0d0d0; border-radius: 6px;
+            font-size: 12px; box-sizing: border-box;
         }
 
-        #ivac-toggle-panel:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Modal Styles */
-        #ivac-helper-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 15px;
-            z-index: 1001;
-            display: none;
-            width: 320px;
-            max-height: 80vh;
-            overflow-y: auto;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        #ivac-helper-modal::-webkit-scrollbar {
-            width: 5px;
-        }
-        #ivac-helper-modal::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        #ivac-helper-modal::-webkit-scrollbar-thumb {
-            background: linear-gradient(#6a11cb, #2575fc);
-            border-radius: 3px;
-        }
-        #ivac-helper-modal::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(#2575fc, #6a11cb);
-        }
-
-        #ivac-helper-modal label {
-            display: block;
-            margin-bottom: 4px;
-            font-weight: bold;
-            font-size: 13px;
-            color: #2c3e50;
-        }
-
-        #ivac-helper-modal input,
-        #ivac-helper-modal select,
-        #ivac-helper-modal textarea {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            margin-bottom: 12px;
-            background: rgba(255,255,255,0.8);
-            transition: all 0.3s ease;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-            font-size: 12px;
-        }
-
-        #ivac-helper-modal input:focus,
-        #ivac-helper-modal select:focus,
-        #ivac-helper-modal textarea:focus {
-            border-color: #6a11cb;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(106,17,203,0.2);
-        }
-
-        #ivac-helper-modal textarea {
-            height: 70px;
-            resize: vertical;
-        }
-
-        #ivac-modal-footer {
-            position: sticky;
-            bottom: 0;
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
-            padding: 12px 0 5px;
-            display: flex;
-            gap: 8px;
-            justify-content: flex-end;
-            border-top: 1px solid rgba(0,0,0,0.1);
-            margin-top: 8px;
-        }
-
-        .ivac-modal-btn {
-            padding: 6px 12px;
-            border-radius: 6px;
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            font-size: 12px;
-        }
-
-        .ivac-modal-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        #ivac-modal-cancel {
-            background: linear-gradient(145deg, #e74c3c, #c0392b);
-        }
-
-        #ivac-modal-clear {
-            background: linear-gradient(145deg, #f39c12, #e67e22);
-        }
-
-        #ivac-modal-save {
-            background: linear-gradient(145deg, #2ecc71, #27ae60);
-        }
-
-        /* Family Member Styles */
-        .family-member {
-            margin-bottom: 12px;
-            border: 1px solid #ddd;
-            padding: 8px;
-            border-radius: 6px;
-            background: rgba(255,255,255,0.7);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .family-member h5 {
-            font-weight: bold;
-            font-size: 13px;
-            margin-bottom: 8px;
-            color: #6a11cb;
-            border-bottom: 1px dashed #ddd;
-            padding-bottom: 4px;
-        }
-
-        /* Personal Info Section */
-        .personal-info-section {
-            margin-top: 15px;
-            padding-top: 12px;
-            border-top: 1px dashed #ccc;
-        }
-
-        .personal-info-section h4 {
-            color: #6a11cb;
-            margin-bottom: 12px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .personal-info-section h4::before {
-            content: "👤";
-        }
-
-        /* Token Input Styles */
-        #ivac-token-container {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px dashed #ccc;
-        }
-
-        #ivac-token-input {
-            width: calc(100% - 65px) !important;
-            display: inline-block;
-            margin-right: 5px;
-        }
-
-        #ivac-token-save {
-            display: inline-block;
-            width: 60px;
-            padding: 8px;
-            background: linear-gradient(145deg, #2ecc71, #27ae60);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 12px;
-        }
-
-        #ivac-token-save:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* OTP Section Styles */
-        #ivac-otp-section {
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        #ivac-otp-input {
-            flex: 1;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 6px;
-            font-size: 12px;
-            height: 30px;
-        }
-
-        #ivac-otp-verify {
-            width: 80px;
-            height: 30px;
-            background: linear-gradient(145deg, #f12711, #f5af19);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        #ivac-otp-verify:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Date Section Styles */
-        #ivac-date-section {
-            margin-top: 3px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        #ivac-date-input {
-            flex: 1;
-            padding: 6px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 12px;
-            height: 30px;
-        }
-
-        #ivac-slot-btn {
-            width: 80px;
-            height: 30px;
-            padding: 6px;
-            background: linear-gradient(145deg, #8e2de2, #4a00e0);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        /* New styles for slot dropdown */
+        /* === HOME PANEL UI (MODERNIZED) === */
+        .ivac-btn-row { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+        #ivac-send-otp-btn { background: linear-gradient(145deg, #00b09b, #96c93d); flex: 1; }
+        #ivac-verify-otp-btn { background: linear-gradient(145deg, #f12711, #f5af19); flex: 1; }
+        #ivac-otp-input { flex: 1.2; border: 1px solid #d0d0d0; border-radius: 6px; padding: 6px; font-size: 12px; max-width: 90px; text-align: center; }
+        #ivac-date-section { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+        #ivac-date-input { flex: 0.8; padding: 6px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 12px; min-width: 90px; }
+        #ivac-slot-btn { width: auto; padding: 0 8px; height: 32px; background: linear-gradient(145deg, #8e2de2, #4a00e0); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; flex-shrink: 0; }
+        #ivac-slot-container { flex: 1; position: relative; }
         #ivac-slot-display {
-            margin-top: 3px;
-            padding: 6px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: #f8f9fa;
-            text-align: center;
+            padding: 6px; border: 1px solid #d0d0d0; border-radius: 6px; text-align: center;
             font-size: 12px;
-            font-weight: bold;
-            color: #e74c3c;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            position: relative;
+            font-weight: normal; /* MODIFIED: Less bold */
+            color: #000000; /* MODIFIED: Changed to black */
+            height: 32px; display: flex;
+            align-items: center; justify-content: center; cursor: pointer; width: 100%; box-sizing: border-box;
         }
-
-        #ivac-slot-display::after {
-            content: "▼";
-            font-size: 10px;
-            margin-left: 5px;
-            transition: transform 0.2s ease;
-        }
-
-        #ivac-slot-display.dropdown-open::after {
-            transform: rotate(180deg);
-        }
-
         #ivac-slot-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            width: 100%;
-            max-height: 150px;
-            overflow-y: auto;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: absolute; top: 100%; left: 0; width: 100%; max-height: 150px; overflow-y: auto;
+            background: #ffffff; border: 1px solid #d0d0d0; border-radius: 6px; z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            /* MODIFIED: Animation for smooth dropdown */
+            opacity: 0;
+            transform: translateY(-5px);
+            visibility: hidden;
+            transition: opacity 0.2s ease, transform 0.2s ease;
         }
-
         #ivac-slot-dropdown.show {
-            display: block;
+            /* MODIFIED: Animation for smooth dropdown */
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
         }
+        .slot-option { padding: 8px; cursor: pointer; font-size: 12px; }
+        .slot-option:hover { background-color: #f0f0f0; }
+        #ivac-pay-now-btn { background: linear-gradient(145deg, #28a745, #20c997); }
 
-        .slot-option {
-            padding: 6px;
-            cursor: pointer;
-            font-size: 12px;
+        /* === NEW: Rearranged Buttons & Link Container === */
+        #ivac-bottom-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 5px; }
+        #ivac-bottom-actions .ivac-panel-btn { flex: 1; margin: 0 !important; }
+        #ivac-payment-link-container {
+            margin-top: 10px; font-size: 11px; text-align: center; word-break: break-all;
+            padding: 8px; background: #e9ecef; border-radius: 6px; min-height: 18px;
         }
+        #ivac-payment-link-container a { color: #007bff; text-decoration: none; font-weight: bold; }
+        #ivac-payment-link-container a:hover { text-decoration: underline; }
 
-        .slot-option:hover {
-            background-color: #f0f0f0;
+        /* === NEW: Smart Auth Token Input === */
+        #ivac-token-container { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #d0d0d0; }
+        #ivac-token-input {
+            width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 8px;
+            font-size: 12px; font-family: monospace; transition: all 0.2s ease;
+            background: #f8f9fa; box-sizing: border-box;
+            font-weight: bold; /* ADDED: BOLD FONT FOR TOKEN */
         }
+        #ivac-token-input:focus { border-color: #6a11cb; box-shadow: 0 0 5px rgba(106, 17, 203, 0.3); }
 
-        /* Button Row Styles */
-        .ivac-btn-row {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 3px;
+        /* --- Updated Login Panel Styles (MODIFIED) --- */
+        #ivac-login-content { display: flex; flex-direction: column; gap: 12px; }
+        .ivac-login-row { display: flex; gap: 5px; align-items: center; }
+        .ivac-login-row input {
+            flex: 1; width: 100%; padding: 8px; border: 1px solid #d0d0d0;
+            border-radius: 6px; font-size: 12px; box-sizing: border-box;
         }
+        .ivac-login-row .ivac-panel-btn {
+            margin-bottom: 0; white-space: nowrap; flex-shrink: 0;
+            height: 34px; /* Fixed height for alignment */
+            width: 85px; /* Fixed width for alignment */
+        }
+        #login-btn-clear-cache {
+            /* FIXED: Colorful gradient for the clear cache button */
+            background: linear-gradient(145deg, #f39c12, #e67e22) !important;
+            margin-top: 5px; margin-bottom: 0 !important;
+        }
+        #login-btn-mobile-verify { background: linear-gradient(145deg, #00b09b, #96c93d); }
+        #login-btn-send-otp { background: linear-gradient(145deg, #f46b45, #eea849); }
+        #login-btn-final { background: linear-gradient(145deg, #2ecc71, #27ae60); }
+        /* Specific spacing for login inputs */
+        #login-mobile, #login-password, #login-otp { margin-bottom: 8px; }
 
-        .ivac-btn-row .ivac-panel-btn {
-            flex: 1;
-        }
-
-        /* Captcha Section Styles */
-        #ivac-captcha-section {
-            margin-top: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        #ivac-captcha-container {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        #ivac-captcha-image-container {
-            width: 100%;
-            height: 60px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: #f8f9fa;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 5px;
-            padding: 5px;
-            box-sizing: border-box;
-        }
-
-        #ivac-captcha-image {
-            max-width: 100%;
-            max-height: 100%;
-        }
-
-        #ivac-captcha-input-container {
-            display: flex;
-            gap: 5px;
-        }
-
-        #ivac-captcha-input {
-            flex: 1;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 6px;
-            font-size: 12px;
-            height: 30px;
-        }
-
-        #ivac-captcha-buttons {
-            display: flex;
-            gap: 5px;
-            margin-top: 5px;
-        }
-
-        #ivac-captcha-generate {
-            flex: 1;
-            height: 30px;
-            background: linear-gradient(145deg, #00c6ff, #0072ff);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        #ivac-captcha-verify {
-            flex: 1;
-            height: 30px;
-            background: linear-gradient(145deg, #00b09b, #96c93d);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        /* Changed Pay Now button color to purple gradient */
-        #ivac-pay-now-btn {
-            flex: 1;
-            height: 30px;
-            background: linear-gradient(145deg, #8e2de2, #4a00e0);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        #ivac-captcha-generate:hover,
-        #ivac-captcha-verify:hover,
-        #ivac-pay-now-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Payment Link Styles */
-        #ivac-payment-link {
-            margin-top: 5px;
-            padding: 5px;
-            font-size: 10px;
-            word-break: break-all;
-            color: #2575fc;
-            text-decoration: underline;
-            cursor: pointer;
-            display: none;
-            border: 1px dashed #2575fc;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.7);
-        }
-
-        #ivac-payment-link:hover {
-            color: #6a11cb;
-        }
-
-        .ivac-button{
-            background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 4px 12px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.5s ease-in-out;
-            color: #000000;
-        }
-        .ivac-button:hover{
-            background:linear-gradient(to right, #00f2fe 0%, #4facfe 100%);
-            font-weight: bold;
-
-        }
-        .iavc-tab-content{
-            margin: 4px 0;
-            padding: 4px;
-        }
-
-        .d-none{
-            display: none;;
-        }
+        /* --- FILE PANEL STYLES --- */
+        .ivac-file-row { display: flex; gap: 5px; }
+        .ivac-file-row .ivac-form-group { flex: 1; }
+        #ivac-file-import-export-actions { display: flex; gap: 5px; margin-top: 10px; margin-bottom: 10px; }
+        #ivac-file-import-export-actions .ivac-panel-btn { flex: 1; margin-bottom: 0 !important; }
+        #ivac-file-import-btn { background: linear-gradient(145deg, #6a11cb, #2575fc); }
+        #ivac-file-export-btn { background: linear-gradient(145deg, #11998e, #38ef7d); }
+        #ivac-file-actions { display: flex; gap: 5px; margin-top: 10px; }
+        #ivac-file-actions .ivac-panel-btn { flex: 1; margin-bottom: 0 !important; }
+        #ivac-file-save-btn { background: linear-gradient(145deg, #2ecc71, #27ae60); }
+        #ivac-file-clear-btn { background: linear-gradient(145deg, #f46b45, #eea849); }
+        #ivac-file-cancel-btn { background: linear-gradient(145deg, #95a5a6, #7f8c8d); }
     `);
 
-    // Shared variables to hold data from the modal
-    let dynamicHighcom = null;
-    let dynamicWebfileId = null;
-    let dynamicIvacId = null;
-    let dynamicVisaType = null;
-    let dynamicFamilyCount = null;
-    let dynamicVisitPurpose = null;
-    let dynamicFullName = null;
-    let dynamicEmail = null;
-    let dynamicPhone = null;
-    let dynamicFamilyName = null;
-    let dynamicFamilyWebfileNo = null;
-    let familyMembers = [];
-    let activeControllers = []; // To track AbortControllers for pending requests
-    let authToken = GM_getValue('authToken', ''); // Get saved token or use empty string
-    let slotInfo = { // To store slot information
-        appointment_date: null,
-        appointment_time: null,
-        available_slots: []
-    };
-    let captchaInfo = { // To store captcha information
-        captcha_id: null,
-        captcha_text: null
-    };
-    let paymentLink = null; // To store the payment link
+// --- Shared variables ---
+let dynamicHighcom, dynamicWebfileId, dynamicIvacId, dynamicVisaType, dynamicFamilyCount,
+    dynamicVisitPurpose, dynamicFullName, dynamicEmail, dynamicPhone;
+let familyMembers = [];
+let authToken = GM_getValue('authToken', '');
+let slotInfo = { appointment_date: null, appointment_time: null, available_slots: [] };
 
-    // Default payment method
-    const defaultPaymentMethod = {
-        name: "VISA",
-        slug: "visacard",
-        link: "https://securepay.sslcommerz.com/gwprocess/v4/image/gw1/visa.png"
-    };
+// --- Data Management Functions ---
+function loadSavedData() {
+    dynamicHighcom = GM_getValue('dynamicHighcom', 4);
+    dynamicWebfileId = GM_getValue('dynamicWebfileId', null);
+    dynamicIvacId = GM_getValue('dynamicIvacId', 4);
+    dynamicVisaType = GM_getValue('dynamicVisaType', '13'); // Default to Medical Visa
+    dynamicFamilyCount = GM_getValue('dynamicFamilyCount', 0);
+    dynamicVisitPurpose = GM_getValue('dynamicVisitPurpose', null);
+    dynamicFullName = GM_getValue('dynamicFullName', null);
+    dynamicEmail = GM_getValue('dynamicEmail', null);
+    dynamicPhone = GM_getValue('dynamicPhone', null);
+    familyMembers = GM_getValue('familyMembers', []);
+}
 
-    // Valid payment domains
-    const VALID_PAYMENT_DOMAINS = [
-        'securepay.sslcommerz.com',
-        'sslcommerz.com'
+function saveData() {
+    GM_setValue('dynamicHighcom', dynamicHighcom);
+    GM_setValue('dynamicWebfileId', dynamicWebfileId);
+    GM_setValue('dynamicIvacId', dynamicIvacId);
+    GM_setValue('dynamicVisaType', dynamicVisaType);
+    GM_setValue('dynamicFamilyCount', dynamicFamilyCount);
+    GM_setValue('dynamicVisitPurpose', dynamicVisitPurpose);
+    GM_setValue('dynamicFullName', dynamicFullName);
+    GM_setValue('dynamicEmail', dynamicEmail);
+    GM_setValue('dynamicPhone', dynamicPhone);
+    GM_setValue('familyMembers', familyMembers);
+}
+
+function clearSavedData() {
+    const keysToClear = [
+        'dynamicHighcom', 'dynamicWebfileId', 'dynamicIvacId', 'dynamicVisaType',
+        'dynamicFamilyCount', 'dynamicVisitPurpose', 'dynamicFullName', 'dynamicEmail',
+        'dynamicPhone', 'familyMembers'
     ];
+    keysToClear.forEach(key => GM_deleteValue(key));
+    loadSavedData(); // Reload defaults after clearing
+    populateForm(); // Repopulate form with defaults
+    updateStatus('Form data cleared!', 'success');
+}
 
-    // Load saved data from storage
-    function loadSavedData() {
-        dynamicHighcom = GM_getValue('dynamicHighcom', 4);
-        dynamicWebfileId = GM_getValue('dynamicWebfileId', null);
-        dynamicIvacId = GM_getValue('dynamicIvacId', 4);
-        dynamicVisaType = GM_getValue('dynamicVisaType', null);
-        dynamicFamilyCount = GM_getValue('dynamicFamilyCount', 0);
-        dynamicVisitPurpose = GM_getValue('dynamicVisitPurpose', null);
-        dynamicFullName = GM_getValue('dynamicFullName', null);
-        dynamicEmail = GM_getValue('dynamicEmail', null);
-        dynamicPhone = GM_getValue('dynamicPhone', null);
-        dynamicFamilyName = GM_getValue('dynamicFamilyName', null);
-        dynamicFamilyWebfileNo = GM_getValue('dynamicFamilyWebfileNo', null);
-        familyMembers = GM_getValue('familyMembers', []);
+// =============================================================
+// ========== CORE LOGIC & API FUNCTIONS =======================
+// =============================================================
+
+function updateStatus(message, type = 'processing') {
+    const statusText = document.querySelector('#status-display .status-text');
+    if (!statusText) return;
+    const statusDisplay = statusText.parentElement;
+    statusDisplay.className = '';
+    if (type === 'success') statusDisplay.classList.add('status-success');
+    else if (type === 'error') statusDisplay.classList.add('status-error');
+    statusText.textContent = message;
+    console.log(`[Status: ${type}] ${message}`);
+}
+
+async function solveCloudflare(pageUrl, siteKey) {
+    updateStatus('Solving Cloudflare CAPTCHA...');
+    if (CAPSOLVER_API_KEY.includes("YOUR_CAPSOLVER_API_KEY")) {
+        updateStatus('Error: CapSolver API Key is not set!', 'error');
+        return null;
     }
-
-    // Save data to storage
-    function saveData() {
-        GM_setValue('dynamicHighcom', dynamicHighcom);
-        GM_setValue('dynamicWebfileId', dynamicWebfileId);
-        GM_setValue('dynamicIvacId', dynamicIvacId);
-        GM_setValue('dynamicVisaType', dynamicVisaType);
-        GM_setValue('dynamicFamilyCount', dynamicFamilyCount);
-        GM_setValue('dynamicVisitPurpose', dynamicVisitPurpose);
-        GM_setValue('dynamicFullName', dynamicFullName);
-        GM_setValue('dynamicEmail', dynamicEmail);
-        GM_setValue('dynamicPhone', dynamicPhone);
-        GM_setValue('dynamicFamilyName', dynamicFamilyName);
-        GM_setValue('dynamicFamilyWebfileNo', dynamicFamilyWebfileNo);
-        GM_setValue('familyMembers', familyMembers);
-    }
-
-    const setMessage = (msg) => document.getElementById("ivac-message").textContent = msg;
-
-
-    // ========== Application Submit Function ==========
-    async function sendDataToServer() {
-        if (!dynamicWebfileId || !dynamicIvacId || !dynamicVisaType) {
-            setMessage("Please complete the Settings Panel");
-            return;
-        }
-
-        let payload = {
-            highcom: dynamicHighcom.toString() || "4",
-            webfile_id: dynamicWebfileId,
-            webfile_id_repeat: dynamicWebfileId,
-            ivac_id: dynamicIvacId.toString() || "4",
-            visa_type: dynamicVisaType.toString() || "13",
-            family_count: dynamicFamilyCount ? dynamicFamilyCount.toString() : "0",
-            visit_purpose: dynamicVisitPurpose || "medical purpose"
-        };
-
-        console.log("Submitting application with payload:", payload);
-
-        const controller = new AbortController();
-        activeControllers.push(controller);
-
-        try {
-            const response = await fetch("https://api-payment.ivacbd.com/api/v2/payment/application-info-submit", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                    "language": "en"
-                },
-                body: JSON.stringify(payload),
-                redirect: 'follow',
-                signal: controller.signal
-            });
-
-            if (response.ok) {
-                console.log("Application submitted successfully!");
-            } else {
-                console.error("Application submission failed:", response.status);
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error("Application submit error:", error);
-            }
-        } finally {
-            // Remove the controller from active list
-            const index = activeControllers.indexOf(controller);
-            if (index > -1) {
-                activeControllers.splice(index, 1);
-            }
-        }
-    }
-
-    // ========== Personal Info Submit Function ==========
-    async function submitPersonalInfo() {
-        if (!dynamicFullName || !dynamicEmail || !dynamicPhone || !dynamicWebfileId) {
-            setMessage("Please complete the Settings Panel");
-            return;
-        }
-
-        const controller = new AbortController();
-        activeControllers.push(controller);
-
-        try {
-            // Prepare family members data
-            const familyData = {};
-            for (let i = 0; i < (dynamicFamilyCount || 0); i++) {
-                const member = familyMembers[i] || {};
-                familyData[i+1] = {
-                    name: member.name || dynamicFamilyName || "",
-                    webfile_no: member.webfile || dynamicFamilyWebfileNo || "",
-                    again_webfile_no: member.webfile || dynamicFamilyWebfileNo || ""
-                };
-            }
-
-            const payload = {
-                full_name: dynamicFullName,
-                email_name: dynamicEmail,
-                phone: dynamicPhone,
-                webfile_id: dynamicWebfileId,
-                family: familyData
-            };
-
-            console.log("Submitting personal info with payload:", payload);
-
-            const response = await fetch("https://api-payment.ivacbd.com/api/v2/payment/personal-info-submit", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                    "language": "en"
-                },
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-
-            if (response.ok) {
-                console.log("Personal info submitted successfully!");
-            } else {
-                console.error("Personal info submission failed:", response.status);
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error("Personal info submit error:", error);
-            }
-        } finally {
-            // Remove the controller from active list
-            const index = activeControllers.indexOf(controller);
-            if (index > -1) {
-                activeControllers.splice(index, 1);
-            }
-        }
-    }
-
-    // ========== Overview Submit Function ==========
-    function sendOverviewRequest() {
-        const controller = new AbortController();
-        activeControllers.push(controller);
-
-        fetch('https://api-payment.ivacbd.com/api/v2/payment/overview-submit', {
+    try {
+        let response = await fetch("https://api.capsolver.com/createTask", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`,
-                'language': 'en'
-            },
-            body: JSON.stringify({}),
-            signal: controller.signal
-        })
-        .then(response => {
-            if (response.ok) {
-                console.log('Overview request succeeded');
-                return response.json();
-            } else {
-                throw new Error('Request failed: ' + response.status);
-            }
-        })
-        .catch(error => {
-            if (error.name !== 'AbortError') {
-                console.error('Overview request failed:', error);
-            }
-        })
-        .finally(() => {
-            // Remove the controller from active list
-            const index = activeControllers.indexOf(controller);
-            if (index > -1) {
-                activeControllers.splice(index, 1);
-            }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                clientKey: CAPSOLVER_API_KEY,
+                task: { type: "AntiTurnstileTaskProxyless", websiteURL: pageUrl, websiteKey: siteKey }
+            })
         });
-    }
+        let data = await response.json();
+        if (data.errorId) throw new Error(`CapSolver Error (createTask): ${data.errorDescription}`);
 
-    // ========== Payment Button Function ==========
-    function handlePayment() {
-        console.log("Opening payment page");
-        GM_openInTab('https://api-payment.ivacbd.com/api/v2/payment/checkout');
-    }
+        const taskId = data.taskId;
+        updateStatus(`CAPTCHA task created: ${taskId}`);
 
-    // ========== Stop All Requests Function ==========
-    function stopAllRequests() {
-        // Abort all active requests
-        activeControllers.forEach(controller => {
-            controller.abort();
+        let solution = null;
+        while (!solution) {
+            if (isStopping) throw new Error("Operation stopped by user.");
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            response = await fetch("https://api.capsolver.com/getTaskResult", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clientKey: CAPSOLVER_API_KEY, taskId: taskId })
+            });
+            data = await response.json();
+            if (data.errorId) throw new Error(`CapSolver Error (getTaskResult): ${data.errorDescription}`);
+            if (data.status === "ready") {
+                solution = data.solution;
+            } else {
+                updateStatus('Solving CAPTCHA...');
+            }
+        }
+        captcha_token = solution.token;
+        updateStatus(`CAPTCHA solved successfully! ✓`, 'success');
+        return captcha_token;
+    } catch (error) {
+        updateStatus(`CF Solve Error: ${error.message}`, 'error');
+        return null;
+    }
+}
+
+async function makeRequest(endpoint, method = 'POST', payload = {}, description = "") {
+    currentRequestController = new AbortController();
+
+    if (isStopping) {
+        updateStatus('Operation stopped.', 'error');
+        return null;
+    }
+    updateStatus(`Processing ${description}...`);
+
+    try {
+        const headers = {
+            "accept": "application/json", "accept-language": "en-US,en;q=0.9",
+            "content-type": "application/json", "language": "en", "priority": "u=1, i",
+            "sec-ch-ua": "\"Not;A=Brand\";v=\"99\", \"Google Chrome\";v=\"139\", \"Chromium\";v=\"139\"",
+            "sec-ch-ua-mobile": "?0", "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty", "sec-fetch-mode": "cors", "sec-fetch-site": "same-origin"
+        };
+        if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+
+        const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+            method: method, headers: headers,
+            body: (method === 'GET' || !Object.keys(payload).length) ? null : JSON.stringify(payload),
+            signal: currentRequestController.signal,
+            referrerPolicy: "strict-origin-when-cross-origin",
+            mode: "cors", credentials: "include"
         });
 
-        // Clear the array
-        activeControllers = [];
+        if (response.ok) {
+            const result = response.status === 204 ? {} : await response.json();
+            updateStatus(`${description} successful ✓`, 'success');
+            return result;
+        }
 
-        console.log('All pending requests have been stopped');
+        const errorResult = await response.json().catch(() => ({ message: `HTTP Error: ${response.status}` }));
+        console.error("API Error Response:", errorResult);
+        throw new Error(errorResult.message || `HTTP Error ${response.status}`);
+
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            updateStatus('Request aborted by user.', 'error');
+            return null;
+        }
+        updateStatus(`${description} failed: ${error.message}`, 'error');
+        isStopping = true; // Stop on any error.
+        return null;
     }
-
-    // ========== Send OTP Function ==========
-    async function sendOTP(resend = false) {
-        const payload = {
-            resend: resend ? 1 : 0
-        };
-
-        console.log(`Sending ${resend ? 're' : ''}OTP with payload:`, payload);
-
-        const controller = new AbortController();
-        activeControllers.push(controller);
-
-        try {
-            const response = await fetch("https://api-payment.ivacbd.com/api/v2/payment/pay-otp-sent", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                    "language": "en"
-                },
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-
-            if (response.ok) {
-                console.log(`${resend ? 'Re' : ''}OTP sent successfully!`);
-                setMessage(`${resend ? 'Re' : ''}OTP sent successfully!`);
-            } else {
-                console.error(`${resend ? 'Re' : ''}OTP send failed:`, response.status);
-                setMessage(`${resend ? 'Re' : ''}OTP send failed!`);
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error(`${resend ? 'Re' : ''}OTP send error:`, error);
-                setMessage(`${resend ? 'Re' : ''}OTP send error!`);
-            }
-        } finally {
-            // Remove the controller from active list
-            const index = activeControllers.indexOf(controller);
-            if (index > -1) {
-                activeControllers.splice(index, 1);
-            }
-        }
-    }
-
-    // ========== Verify OTP Function ==========
-    async function verifyOTP(otp) {
-        if (!otp || otp.length !== 6) {
-            setMessage("Please enter a valid 6-digit OTP");
-            return;
-        }
-
-        const payload = {
-            otp: otp
-        };
-
-        console.log("Verifying OTP with payload:", payload);
-
-        const controller = new AbortController();
-        activeControllers.push(controller);
-
-        try {
-            const response = await fetch("https://api-payment.ivacbd.com/api/v2/payment/pay-otp-verify", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                    "language": "en"
-                },
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log("OTP verified successfully!");
-                setMessage("OTP verified successfully!");
-
-                // Clear OTP input after successful verification
-                document.getElementById('ivac-otp-input').value = '';
-
-                // If date is available in response, set it in the date input
-                if (data.data && data.data.slot_dates && data.data.slot_dates.length > 0) {
-                    document.getElementById('ivac-date-input').value = data.data.slot_dates[0];
-                    slotInfo.appointment_date = data.data.slot_dates[0];
-                }
-            } else {
-                console.error("OTP verification failed:", response.status);
-                setMessage("OTP verification failed!");
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error("OTP verification error:", error);
-                setMessage("OTP verification error!");
-            }
-        } finally {
-            // Remove the controller from active list
-            const index = activeControllers.indexOf(controller);
-            if (index > -1) {
-                activeControllers.splice(index, 1);
-            }
-        }
-    }
-
-    // ========== Get Slot Times Function ==========
-    async function getSlotTimes() {
-        const dateInput = document.getElementById('ivac-date-input');
-        if (!dateInput.value) {
-            setMessage("Please select a date first");
-            return;
-        }
-
-        const payload = {
-            appointment_date: dateInput.value
-        };
-
-        console.log("Getting slot times with payload:", payload);
-
-        const controller = new AbortController();
-        activeControllers.push(controller);
-
-        try {
-            const response = await fetch("https://api-payment.ivacbd.com/api/v2/payment/pay-slot-time", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                    "language": "en"
-                },
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log("Slot times retrieved successfully:", data);
-
-                // Store all available slots
-                slotInfo.available_slots = data.data?.slot_times || [];
-
-                // Update the dropdown with available slots
-                updateSlotDropdown();
-
-                // Display the first slot time information if available
-                if (slotInfo.available_slots.length > 0) {
-                    const slot = slotInfo.available_slots[0];
-                    document.getElementById('ivac-slot-display').textContent =
-                        `${slot.time_display} (Slot: ${slot.availableSlot})`;
-
-                    // Store slot info for Pay Now
-                    slotInfo.appointment_date = dateInput.value;
-                    slotInfo.appointment_time = slot.time_display;
-                } else {
-                    document.getElementById('ivac-slot-display').textContent = "Select Appointment Time";
-                    slotInfo.appointment_date = null;
-                    slotInfo.appointment_time = null;
-                }
-            } else {
-                console.error("Slot times retrieval failed:", response.status);
-                setMessage("Failed to get slot times!");
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error("Slot times retrieval error:", error);
-                setMessage("Error getting slot times!");
-            }
-        } finally {
-            // Remove the controller from active list
-            const index = activeControllers.indexOf(controller);
-            if (index > -1) {
-                activeControllers.splice(index, 1);
-            }
-        }
-    }
-
-    // Function to update slot dropdown with available slots
-    function updateSlotDropdown() {
-        const slotDropdown = document.getElementById('ivac-slot-dropdown');
-        slotDropdown.innerHTML = '';
-
-        if (slotInfo.available_slots.length === 0) {
-            const option = document.createElement('div');
-            option.className = 'slot-option';
-            option.textContent = 'No slots available';
-            slotDropdown.appendChild(option);
-            return;
-        }
-
-        slotInfo.available_slots.forEach(slot => {
-            const option = document.createElement('div');
-            option.className = 'slot-option';
-            option.textContent = `${slot.time_display} (Slot: ${slot.availableSlot})`;
-            option.addEventListener('click', () => {
-                document.getElementById('ivac-slot-display').textContent =
-                    `${slot.time_display} (Slot: ${slot.availableSlot})`;
-                document.getElementById('ivac-slot-display').classList.remove('dropdown-open');
-                slotInfo.appointment_time = slot.time_display;
-                slotDropdown.classList.remove('show');
-            });
-            slotDropdown.appendChild(option);
-        });
-    }
-
-    // ========== Generate Captcha Function ==========
-    async function generateCaptcha() {
-        console.log("Generating captcha");
-
-        const controller = new AbortController();
-        activeControllers.push(controller);
-
-        try {
-            const response = await fetch("https://api-payment.ivacbd.com/api/v2/captcha/generate-pay", {
-                method: "GET",
-                headers: {
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                    "language": "en"
-                },
-                signal: controller.signal
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log("Captcha generated successfully:", data);
-
-                // Store captcha info
-                captchaInfo.captcha_id = data.data.captcha_id;
-                captchaInfo.captcha_text = data.data.captcha;
-
-                // Display captcha in the panel
-                const captchaImageContainer = document.getElementById('ivac-captcha-image-container');
-                if (captchaImageContainer) {
-                    // Clear previous image if any
-                    captchaImageContainer.innerHTML = '';
-
-                    // Create new image element
-                    const img = document.createElement('img');
-                    img.id = 'ivac-captcha-image';
-                    img.src = data.data.captcha_image;
-                    img.alt = 'CAPTCHA Image';
-                    img.style.maxWidth = '100%';
-                    img.style.maxHeight = '100%';
-
-                    captchaImageContainer.appendChild(img);
-                    document.getElementById('ivac-captcha-input').value = '';
-                }
-            } else {
-                console.error("Captcha generation failed:", response.status);
-                setMessage("Failed to generate captcha!");
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error("Captcha generation error:", error);
-                setMessage("Error generating captcha!");
-            }
-        } finally {
-            // Remove the controller from active list
-            const index = activeControllers.indexOf(controller);
-            if (index > -1) {
-                activeControllers.splice(index, 1);
-            }
-        }
-    }
-
-    // ========== Verify Captcha Function ==========
-    async function verifyCaptcha() {
-        const captchaInput = document.getElementById('ivac-captcha-input').value;
-        if (!captchaInput) {
-            setMessage("Please enter the captcha text");
-            return;
-        }
-
-        if (!captchaInfo.captcha_id) {
-            setMessage("Please generate a captcha first");
-            return;
-        }
-
-        const payload = {
-            captcha_id: captchaInfo.captcha_id,
-            captcha_input: captchaInput
-        };
-
-        console.log("Verifying captcha with payload:", payload);
-
-        const controller = new AbortController();
-        activeControllers.push(controller);
-
-        try {
-            const response = await fetch("https://api-payment.ivacbd.com/api/v2/captcha/verify-pay", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                    "language": "en"
-                },
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log("Captcha verified successfully:", data);
-                setMessage("Captcha verified successfully!");
-
-                // Clear captcha input after successful verification
-                document.getElementById('ivac-captcha-input').value = '';
-            } else {
-                console.error("Captcha verification failed:", response.status);
-                setMessage("Captcha verification failed!");
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error("Captcha verification error:", error);
-                setMessage("Captcha verification error!");
-            }
-        } finally {
-            // Remove the controller from active list
-            const index = activeControllers.indexOf(controller);
-            if (index > -1) {
-                activeControllers.splice(index, 1);
-            }
-        }
-    }
-
-    // ========== Pay Now Function ==========
-    async function payNow() {
-        if (!slotInfo.appointment_date || !slotInfo.appointment_time) {
-            setMessage("Please select a date and time slot first");
-            return;
-        }
-
-        if (!captchaInfo.captcha_id) {
-            setMessage("Please generate and verify a captcha first");
-            return;
-        }
-
-        const payload = {
-            appointment_date: slotInfo.appointment_date,
-            appointment_time: slotInfo.appointment_time,
-            hash_param: captchaInfo.captcha_id,
-            selected_payment: defaultPaymentMethod
-        };
-
-        console.log("Sending payment request with payload:", payload);
-
-        const controller = new AbortController();
-        activeControllers.push(controller);
-
-        try {
-            const response = await fetch("https://api-payment.ivacbd.com/api/v2/payment/pay-now", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${authToken}`,
-                    "language": "en"
-                },
-                body: JSON.stringify(payload),
-                signal: controller.signal
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log("Payment request successful:", data);
-                setMessage("Payment request submitted successfully!");
-
-                // Store the payment link
-                if (data.data && data.data.payment_url) {
-                    paymentLink = data.data.payment_url;
-
-                    // Update the payment link display
-                    const paymentLinkElement = document.getElementById('ivac-payment-link');
-                    paymentLinkElement.textContent = paymentLink;
-                    paymentLinkElement.style.display = 'block';
-
-                    // Open the payment link in a new tab
-                    GM_openInTab(paymentLink);
-                }
-            } else {
-                console.error("Payment request failed:", response.status);
-                setMessage("Payment request failed!");
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                console.error("Payment request error:", error);
-                setMessage("Payment request error!");
-            }
-        } finally {
-            // Remove the controller from active list
-            const index = activeControllers.indexOf(controller);
-            if (index > -1) {
-                activeControllers.splice(index, 1);
-            }
-        }
-    }
-
-    // ==================== Modal and Input Functions ====================
-
-    // Create the modal for input
-    const modal = document.createElement('div');
-    modal.id = "ivac-helper-modal";
-    document.body.appendChild(modal);
-
-    // Modal content
-    modal.innerHTML = `
-        <style>
-            #ivac-helper-modal::-webkit-scrollbar {
-                width: 5px;
-            }
-            #ivac-helper-modal::-webkit-scrollbar-track {
-                background: #f1f1f1;
-                border-radius: 3px;
-            }
-            #ivac-helper-modal::-webkit-scrollbar-thumb {
-                background: linear-gradient(#6a11cb, #2575fc);
-                border-radius: 3px;
-            }
-            #ivac-helper-modal::-webkit-scrollbar-thumb:hover {
-                background: linear-gradient(#2575fc, #6a11cb);
-            }
-        </style>
-    `;
-
-    // High Commission dropdown - Sylhet (4) is now default
-    const highcomSelect = document.createElement('select');
-    highcomSelect.innerHTML = `
-        <option value="4">Sylhet</option>
-        <option value="1">Dhaka</option>
-        <option value="2">Chittagong</option>
-        <option value="3">Rajshahi</option>
-        <option value="5">Khulna</option>
-    `;
-    modal.appendChild(createLabel("Select High Commission:"));
-    modal.appendChild(highcomSelect);
-
-    // IVAC Center dropdown - IVAC Sylhet (4) is now default
-    const ivacSelect = document.createElement('select');
-    modal.appendChild(createLabel("Select an IVAC Center:"));
-    modal.appendChild(ivacSelect);
-
-    // Web File Number input
-    const webFileLabel = createLabel("Web File Number");
-    modal.appendChild(webFileLabel);
-    const webFileInput = document.createElement('input');
-    webFileInput.type = 'text';
-    webFileInput.placeholder = 'Enter Web File Number';
-    webFileInput.style.width = '100%';
-    webFileInput.style.padding = '8px';
-    webFileInput.style.border = '1px solid #ddd';
-    webFileInput.style.borderRadius = '6px';
-    webFileInput.style.marginBottom = '12px';
-    webFileInput.style.background = 'rgba(255,255,255,0.8)';
-    webFileInput.style.transition = 'all 0.3s ease';
-    webFileInput.style.boxShadow = 'inset 0 1px 3px rgba(0,0,0,0.1)';
-    webFileInput.style.fontSize = '12px';
-    modal.appendChild(webFileInput);
-
-    // Visa Type dropdown
-    const visaTypeSelect = document.createElement('select');
-    visaTypeSelect.innerHTML = `
-        <option value="3">TOURIST VISA</option>
-        <option value="13" selected>MEDICAL/MEDICAL ATTENDANT VISA</option>
-        <option value="1">BUSINESS VISA</option>
-        <option value="6">ENTRY VISA</option>
-        <option value="2">STUDENT VISA</option>
-    `;
-    modal.appendChild(createLabel("Select a Visa Type:"));
-    modal.appendChild(visaTypeSelect);
-
-    // Family Count dropdown
-    const inputFamilyCount = document.createElement('select');
-    inputFamilyCount.innerHTML = `
-        <option value="0">0</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-    `;
-    modal.appendChild(createLabel("Number of Family Members:"));
-    modal.appendChild(inputFamilyCount);
-
-    // Container for family member inputs
-    const familyInputsContainer = document.createElement('div');
-    familyInputsContainer.id = 'familyInputsContainer';
-    familyInputsContainer.style.marginTop = '8px';
-    modal.appendChild(familyInputsContainer);
-
-    // Visit Purpose textarea
-    const visitPurposeTextarea = document.createElement('textarea');
-    visitPurposeTextarea.placeholder = "Enter Visit Purpose Details";
-    modal.appendChild(createLabel("Visit Purpose Details:"));
-    modal.appendChild(visitPurposeTextarea);
-
-    // Personal Info Section
-    const personalInfoSection = document.createElement('div');
-    personalInfoSection.className = 'personal-info-section';
-    personalInfoSection.innerHTML = '<h4>Personal Information</h4>';
-    modal.appendChild(personalInfoSection);
-
-    // Personal Info Inputs
-    const inputFullName = createInput("Full Name", "Enter Full Name");
-    personalInfoSection.appendChild(inputFullName);
-
-    const inputEmail = createInput("Email", "Enter Email", "email");
-    personalInfoSection.appendChild(inputEmail);
-
-    const inputPhone = createInput("Phone Number", "Enter Phone Number", "tel");
-    personalInfoSection.appendChild(inputPhone);
-
-    // Token Input Section
-    const tokenContainer = document.createElement('div');
-    tokenContainer.id = 'ivac-token-container';
-    tokenContainer.innerHTML = '<h4>Authorization Token</h4>';
-    modal.appendChild(tokenContainer);
-
-    const tokenInput = document.createElement('input');
-    tokenInput.id = 'ivac-token-input';
-    tokenInput.type = 'text';
-    tokenInput.placeholder = 'Paste AUTH_TOKEN here';
-    tokenInput.value = authToken;
-    tokenContainer.appendChild(tokenInput);
-
-    const tokenSaveBtn = document.createElement('button');
-    tokenSaveBtn.id = 'ivac-token-save';
-    tokenSaveBtn.textContent = 'Save';
-    tokenSaveBtn.addEventListener('click', function() {
-        authToken = tokenInput.value;
+}
+
+// --- Login Flow Functions ---
+async function handleMobileVerify() {
+    const mobileNo = document.getElementById('login-mobile').value;
+    if (!mobileNo) return updateStatus('Please enter a mobile number.', 'error');
+    if (!await solveCloudflare("https://payment.ivacbd.com/login", "0x4AAAAAABpNUpzYeppBoYpe")) return;
+    await makeRequest('mobile-verify', 'POST', { mobile_no: mobileNo, captcha_token }, 'Mobile Verify');
+}
+
+async function handleLoginSendOtp() {
+    const mobileNo = document.getElementById('login-mobile').value;
+    const password = document.getElementById('login-password').value;
+    if (!mobileNo || !password) return updateStatus('Please enter mobile and password.', 'error');
+    await makeRequest('login', 'POST', { mobile_no: mobileNo, password }, 'Send OTP');
+}
+
+async function handleLoginVerifyOtp() {
+    const mobileNo = document.getElementById('login-mobile').value;
+    const password = document.getElementById('login-password').value;
+    const otp = document.getElementById('login-otp').value;
+    if (!otp) return updateStatus('Please enter OTP.', 'error');
+
+    const result = await makeRequest('login-otp', 'POST', { mobile_no: mobileNo, password, otp }, 'Login Verify');
+    if (result && result.data && result.data.access_token) {
+        authToken = result.data.access_token;
         GM_setValue('authToken', authToken);
-        setMessage('Token saved successfully!');
-    });
-    tokenContainer.appendChild(tokenSaveBtn);
-
-    // Modal footer with buttons (sticky at bottom)
-    const modalFooter = document.createElement('div');
-    modalFooter.id = 'ivac-modal-footer';
-    modalFooter.innerHTML = `
-        <button id="ivac-modal-cancel" class="ivac-modal-btn">Cancel</button>
-        <button id="ivac-modal-clear" class="ivac-modal-btn">Clear</button>
-        <button id="ivac-modal-save" class="ivac-modal-btn">Save</button>
-    `;
-    modal.appendChild(modalFooter);
-
-    // Helper function to create input fields
-    function createInput(labelText, placeholder, type = 'text') {
-        const container = document.createElement('div');
-        container.style.marginBottom = '12px';
-
-        const label = document.createElement('label');
-        label.innerText = labelText;
-        container.appendChild(label);
-
-        const input = document.createElement('input');
-        input.type = type;
-        input.placeholder = placeholder;
-        input.style.width = '100%';
-        input.style.padding = '8px';
-        input.style.border = '1px solid #ddd';
-        input.style.borderRadius = '6px';
-        input.style.marginBottom = '12px';
-        input.style.background = 'rgba(255,255,255,0.8)';
-        input.style.transition = 'all 0.3s ease';
-        input.style.boxShadow = 'inset 0 1px 3px rgba(0,0,0,0.1)';
-        input.style.fontSize = '12px';
-        container.appendChild(input);
-
-        return container;
+        localStorage.setItem('access_token', authToken);
+        updateStatus('Login successful!', 'success');
+        document.getElementById('ivac-token-input').value = authToken;
+        document.querySelector('.ivac-tab[data-tab="home"]').click();
     }
+}
 
-    // Helper function to create labels
-    function createLabel(text) {
-        const label = document.createElement('label');
-        label.innerText = text;
-        label.style.display = 'block';
-        label.style.marginBottom = '4px';
-        label.style.fontWeight = 'bold';
-        label.style.fontSize = '13px';
-        label.style.color = '#2c3e50';
-        return label;
-    }
+// --- Application Flow Functions ---
+async function handleAppInfo() {
+    if (!dynamicWebfileId || !dynamicIvacId || !dynamicVisaType) return updateStatus("Please complete the File tab.", 'error');
+    if (!await solveCloudflare(window.location.href, "0x4AAAAAABvQ3Mi6RktCuZ7P")) return;
+    const payload = { highcom: String(dynamicHighcom), webfile_id: dynamicWebfileId, webfile_id_repeat: dynamicWebfileId, ivac_id: String(dynamicIvacId), visa_type: String(dynamicVisaType), family_count: String(dynamicFamilyCount || 0), visit_purpose: dynamicVisitPurpose || "medical purpose", y6e7uk_token_t6d8n3: captcha_token };
+    await makeRequest(app_info_submit_endpoint, 'POST', payload, 'Application Info');
+}
 
-    // Function to update family member inputs based on count
-    function updateFamilyInputs() {
-        const count = parseInt(inputFamilyCount.value);
-        familyInputsContainer.innerHTML = '';
-        familyMembers = familyMembers || [];
+async function handlePersonalInfo() {
+    if (!dynamicFullName || !dynamicWebfileId) return updateStatus("Please enter personal information.", 'error');
+    const familyPayload = familyMembers.map(member => ({
+        webfile_no: member.webfile_id,
+        again_webfile_no: member.webfile_id,
+        name: member.full_name
+    }));
+    const payload = {
+        full_name: dynamicFullName,
+        email_name: dynamicEmail,
+        phone: dynamicPhone,
+        webfile_id: dynamicWebfileId,
+        family: familyPayload
+    };
+    await makeRequest('payment/personal-info-submit', 'POST', payload, 'Personal Info');
+}
 
-        for (let i = 0; i < count; i++) {
-            const memberContainer = document.createElement('div');
-            memberContainer.className = 'family-member';
+async function handleOverview() { await makeRequest('payment/overview-submit', 'POST', {}, 'Overview'); }
+async function handleSendPaymentOtp(isResend = false) { await makeRequest('payment/pay-otp-sent', 'POST', { resend: isResend ? 1 : 0 }, isResend ? 'Resend OTP' : 'Send OTP'); }
 
-            const heading = document.createElement('h5');
-            heading.innerText = `Family Member ${i+1}`;
-            memberContainer.appendChild(heading);
+// MODIFIED: New handler for the OTP button to manage send/resend state
+async function handleOtpRequest() {
+    await handleSendPaymentOtp(isOtpSent);
+    // After the first attempt, any subsequent click is a resend.
+    isOtpSent = true;
+}
 
-            // Name input
-            const nameInput = document.createElement('input');
-            nameInput.placeholder = "Name";
-            nameInput.dataset.index = i;
-            nameInput.dataset.type = 'name';
-            nameInput.style.width = '100%';
-            nameInput.style.padding = '8px';
-            nameInput.style.border = '1px solid #ddd';
-            nameInput.style.borderRadius = '6px';
-            nameInput.style.marginBottom = '8px';
-            nameInput.style.background = 'rgba(255,255,255,0.8)';
-            nameInput.style.fontSize = '12px';
-            memberContainer.appendChild(nameInput);
-
-            // Webfile input
-            const webfileInput = document.createElement('input');
-            webfileInput.placeholder = "Web File Number";
-            webfileInput.dataset.index = i;
-            webfileInput.dataset.type = 'webfile';
-            webfileInput.style.width = '100%';
-            webfileInput.style.padding = '8px';
-            webfileInput.style.border = '1px solid #ddd';
-            webfileInput.style.borderRadius = '6px';
-            webfileInput.style.marginBottom = '8px';
-            webfileInput.style.background = 'rgba(255,255,255,0.8)';
-            webfileInput.style.fontSize = '12px';
-            memberContainer.appendChild(webfileInput);
-
-            // Set saved values if they exist
-            if (familyMembers[i]) {
-                nameInput.value = familyMembers[i].name || '';
-                webfileInput.value = familyMembers[i].webfile || '';
-            }
-
-            familyInputsContainer.appendChild(memberContainer);
+async function handleVerifyPaymentOtp() {
+    const otp = document.getElementById('ivac-otp-input').value;
+    if (!otp || otp.length !== 6) return updateStatus("Please enter a valid 6-digit OTP.", 'error');
+    const result = await makeRequest('payment/pay-otp-verify', 'POST', { otp }, 'Verify OTP');
+    if (result && result.data) {
+        const appointmentDate = result.data?.slot_dates?.[0] || result.data?.appointment_date;
+        if (appointmentDate) {
+            document.getElementById('ivac-date-input').value = appointmentDate;
+            updateStatus(`Date found: ${appointmentDate}`, 'success');
         }
     }
+}
 
-    // Function to update IVAC centers based on selected High Commission
-    function updateIvacCenters() {
-        const selectedHighCom = highcomSelect.value;
-        const ivacCenters = {
-            1: [[9, "IVAC, BARISAL"], [12, "IVAC, JESSORE"], [17, "IVAC, Dhaka (JFP)"], [20, "IVAC, SATKHIRA"]],
-            2: [[5, "IVAC, CHITTAGONG"], [21, "IVAC, CUMILLA"], [22, "IVAC, NOAKHALI"], [23, "IVAC, BRAHMANBARIA"]],
-            3: [[2, "IVAC , RAJSHAHI"], [7, "IVAC, RANGPUR"], [18, "IVAC, THAKURGAON"], [19, "IVAC, BOGURA"], [24, "IVAC, KUSHTIA"]],
-            4: [[4, "IVAC, SYLHET"], [8, "IVAC, MYMENSINGH"]],
-            5: [[3, "IVAC, KHULNA"]]
-        };
+async function getSlot() {
+    const appointmentDate = document.getElementById('ivac-date-input').value;
+    if (!appointmentDate) return updateStatus("Please select a date.", 'error');
+    slotInfo.appointment_date = appointmentDate;
+    const result = await makeRequest('payment/pay-slot-time', 'POST', { appointment_date: appointmentDate }, 'Slot Search');
+    if (result && result.data) {
+        slotInfo.available_slots = result.data.slot_times || [];
+        updateSlotDropdown();
+    }
+}
 
-        ivacSelect.innerHTML = '';
-        ivacCenters[selectedHighCom]?.forEach(([value, name]) => {
-            const option = document.createElement('option');
-            option.value = value;
-            option.text = name;
-            ivacSelect.appendChild(option);
-        });
+async function payNow() {
+    if (!slotInfo.appointment_date || !slotInfo.appointment_time) return updateStatus("Please select a date and time slot.", 'error');
+    if(!await solveCloudflare(window.location.href, "0x4AAAAAABvQ3Mi6RktCuZ7P")) return;
+    const payload = { appointment_date: slotInfo.appointment_date, appointment_time: slotInfo.appointment_time, k5t0g8_token_y4v9f6: captcha_token, selected_payment: { "name": "VISA", "slug": "visacard", "link": "https://securepay.sslcommerz.com/gwprocess/v4/image/gw1/visa.png" } };
+    const result = await makeRequest(pay_now_endpoint, 'POST', payload, 'Payment');
+    if (result && result.data && result.data.url) {
+        updateStatus('Payment link generated!', 'success');
+        window.open(result.data.url, '_blank');
+        isOtpSent = false; // MODIFIED: Reset OTP state after successful completion
+
+        // NEW: Display the link in the panel
+        const linkContainer = document.getElementById('ivac-payment-link-container');
+        linkContainer.innerHTML = ''; // Clear previous link
+        const linkEl = document.createElement('a');
+        linkEl.href = result.data.url;
+        linkEl.textContent = 'Payment Link (Click to Open)';
+        linkEl.title = result.data.url;
+        linkEl.target = '_blank';
+        linkContainer.appendChild(linkEl);
+    }
+}
+
+function stopAllRequests() {
+    isStopping = true;
+    if (currentRequestController) currentRequestController.abort();
+    updateStatus('All operations stopped.', 'error');
+    isOtpSent = false; // MODIFIED: Reset OTP state on stop
+    setTimeout(() => { isStopping = false; }, 500);
+}
+
+// --- UI Helper Functions ---
+function updateSlotDropdown() {
+    const slotDropdown = document.getElementById('ivac-slot-dropdown');
+    const slotDisplay = document.getElementById('ivac-slot-display');
+    slotDropdown.innerHTML = '';
+
+    if (slotInfo.available_slots.length === 0) {
+        slotDisplay.textContent = "No slots available";
+        slotInfo.appointment_time = null;
+        return;
     }
 
-    // Function to auto-fetch the auth token
-    async function fetchAuthToken() {
-        try {
-            const response = await fetch("https://api-payment.ivacbd.com/api/v2/home", {
-                method: "GET",
-                headers: {
-                    "Accept": "application/json",
-                    "language": "en"
-                }
-            });
+    const firstSlot = slotInfo.available_slots[0];
+    slotDisplay.textContent = `${firstSlot.time_display} (${firstSlot.availableSlot})`;
+    slotInfo.appointment_time = firstSlot.time_display;
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.data && data.data.token) {
-                    authToken = data.data.token;
-                    GM_setValue('authToken', authToken);
-                    document.getElementById('ivac-token-input').value = authToken;
-                    console.log("Token fetched and saved successfully");
-                }
-            }
-        } catch (error) {
-            console.error("Error fetching token:", error);
-        }
-    }
-
-    // Initialize IVAC centers
-    updateIvacCenters();
-
-    // Event listeners
-    highcomSelect.addEventListener('change', updateIvacCenters);
-    inputFamilyCount.addEventListener('change', updateFamilyInputs);
-
-    // Modal button events
-    document.getElementById('ivac-modal-cancel').addEventListener('click', function() {
-        modal.style.display = 'none';
-    });
-
-    document.getElementById('ivac-modal-clear').addEventListener('click', function() {
-        webFileInput.value = "";
-        inputFamilyCount.value = "0";
-        highcomSelect.value = "4";
-        updateIvacCenters();
-        ivacSelect.value = "4";
-        visaTypeSelect.value = "13";
-        visitPurposeTextarea.value = "";
-        inputFullName.querySelector('input').value = "";
-        inputEmail.querySelector('input').value = "";
-        inputPhone.querySelector('input').value = "";
-        tokenInput.value = "";
-        updateFamilyInputs();
-
-        // Clear saved data
-        dynamicHighcom = 4;
-        dynamicIvacId = 4;
-        dynamicWebfileId = null;
-        dynamicVisaType = null;
-        dynamicFamilyCount = 0;
-        dynamicVisitPurpose = null;
-        dynamicFullName = null;
-        dynamicEmail = null;
-        dynamicPhone = null;
-        dynamicFamilyName = null;
-        dynamicFamilyWebfileNo = null;
-        familyMembers = [];
-        authToken = "";
-        GM_setValue('authToken', "");
-        saveData();
-    });
-
-    document.getElementById('ivac-modal-save').addEventListener('click', function() {
-        dynamicWebfileId = webFileInput.value || null;
-        dynamicFamilyCount = parseInt(inputFamilyCount.value) || 0;
-        dynamicHighcom = parseInt(highcomSelect.value) || 4;
-        dynamicIvacId = parseInt(ivacSelect.value) || 4;
-        dynamicVisaType = parseInt(visaTypeSelect.value) || null;
-        dynamicVisitPurpose = visitPurposeTextarea.value || null;
-        dynamicFullName = inputFullName.querySelector('input').value || null;
-        dynamicEmail = inputEmail.querySelector('input').value || null;
-        dynamicPhone = inputPhone.querySelector('input').value || null;
-        dynamicFamilyName = inputFullName.querySelector('input').value || null;
-        dynamicFamilyWebfileNo = webFileInput.value ? webFileInput.value.replace(/(.{6})$/, "A7C25") : null;
-        authToken = tokenInput.value || "";
-        GM_setValue('authToken', authToken);
-
-        // Save family members data
-        familyMembers = [];
-        const inputs = familyInputsContainer.querySelectorAll('input');
-        inputs.forEach(input => {
-            const index = parseInt(input.dataset.index);
-            const type = input.dataset.type;
-            const value = input.value || null;
-
-            if (!familyMembers[index]) {
-                familyMembers[index] = {};
-            }
-            familyMembers[index][type] = value;
-        });
-
-        saveData();
-        modal.style.display = 'none';
-    });
-
-    // ==================== Smart Panel Creation ====================
-
-    // Create the smart panel container
-    const smartPanel = document.createElement('div');
-    smartPanel.id = 'ivac-smart-panel';
-
-    // Panel header
-    const panelHeader = document.createElement('div');
-    panelHeader.id = 'ivac-smart-panel-header';
-
-    // Panel title
-    const panelTitle = document.createElement('div');
-    panelTitle.id = 'ivac-smart-panel-title';
-    panelTitle.innerHTML = `Rupon Modernization`;
-
-    const panelClose = document.createElement('button');
-    panelClose.id = 'ivac-smart-panel-close';
-    panelClose.innerHTML = '&times;';
-    panelClose.addEventListener('click', function(e) {
-        e.stopPropagation();
-        smartPanel.classList.remove('visible');
-    });
-
-    panelHeader.appendChild(panelTitle);
-    panelHeader.appendChild(panelClose);
-    smartPanel.appendChild(panelHeader);
-
-    // Panel buttons container
-    const panelButtons = document.createElement('div');
-    panelButtons.id = 'ivac-smart-panel-buttons';
-
-    const loginRow = document.createElement('div');
-    loginRow.className = 'ivac-btn-row';
-    loginRow.style = "width: 100%; display: flex;";
-
-    async function verifyMobile() {
-        const mobile = document.getElementById('ivac-userMobile').value;
-        if (!mobile) {
-            setMessage("Please enter a mobile number");
-            return;
-        }
-        const response = await fetch("https://api-payment.ivacbd.com/api/v2/mobile-verify", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({
-                mobile_no: mobile,
-            })
-        });
-    
-        if (response.ok) {
-            const data = await response.json();
-            setMessage(data.message);
-    
-        } else {
-            console.error("Login failed");
-            setMessage(response.message);
-        }
-    }
-    
-    async function verifyPassword() {
-        const mobile = document.getElementById('ivac-userMobile').value;
-        const password = document.getElementById('ivac-password').value;
-        if (!password) {
-            setMessage("Please enter a password");
-            return;
-        }
-        const response = await fetch("https://api-payment.ivacbd.com/api/v2/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({
-                mobile_no: mobile,
-                password: password,
-            })
-        });
-    
-        if (response.ok) {
-            const data = await response.json();
-            setMessage(data.message);
-        } else {
-            console.error("Login failed");
-            setMessage(response.message);
-        }
-    }
-    
-    async function verifyOTP() {
-        const mobile = document.getElementById('ivac-userMobile').value;
-        const password = document.getElementById('ivac-password').value;
-        const otp = document.getElementById('ivac-otp').value;
-        if (!otp) {
-            setMessage("Please enter an OTP");
-            return;
-        }
-        const response = await fetch("https://api-payment.ivacbd.com/api/v2/login-otp", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({
-                mobile_no: mobile,
-                password: password,
-                otp: otp,
-            })
-        });
-    
-        if (response.ok) {
-            const data = await response.json();
-            setMessage(data.message);
-            console.log(data);
-            authToken = data.data.access_token;
-    
-        } else {
-            console.error("Login failed");
-            setMessage(response.message);
-        }
-    }
-    
-    function toggleTab(index) {
-        const contents = document.querySelectorAll(".ivac-tab-content");
-        contents.forEach((content, i) => {
-            content.classList.toggle("d-none");
-        });
-    }
-    
-    const tabBar = document.createElement('div');
-    tabBar.id = "ivac-tab-bar";
-    tabBar.style = "width: 100%;";
-    tabBar.innerHTML = `
-                <p id="ivac-message" style="color: red; padding: 12px 0px;"></p>
-                <div>
-                    <button id="ivac-tab-0" class="ivac-button">Login</button>
-                    <button id="ivac-tab-1" class="ivac-button">Stop All</button>
-                </div>
-                <div class="ivac-tab-content-body" style="margin: 12px 0px;">
-                    <div class="ivac-tab-content d-none">
-                        <div style="display:flex; flex-direction: column; gap: 8px; justify-content: space-between;">
-                            <div style="display:flex; gap: 8px;">
-                                <input style="font-size: 12px; padding: 3px 8px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;" type="text" id="ivac-userMobile" name="mobile" required placeholder="Enter mobile number">
-                                <button id="ivac-mobile-verify-btn" class="ivac-panel-btn ivac-button" type="button">Verify</button>
-                            </div>
-    
-                            <div style="display:flex; gap: 8px;">
-                                <input style="font-size: 12px; padding: 3px 8px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;" type="password" id="ivac-password" name="password" required placeholder="Enter password">
-                                <button id="ivac-password-verify-btn" class="ivac-panel-btn ivac-button" type="button">Verify</button>
-                            </div>
-                            <div style="display:flex; gap: 8px;">
-                            <input style="font-size: 12px; padding: 3px 8px; border: 1px solid #ddd; border-radius: 6px; background: #ffffff;" type="text" id="ivac-otp" name="otp" required placeholder="Enter OTP">
-                            <button id="ivac-otp-verify-btn" class="ivac-panel-btn ivac-button" type="button">Verify</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-    
-    tabBar.querySelector('#ivac-mobile-verify-btn').addEventListener('click', verifyMobile);
-    tabBar.querySelector('#ivac-password-verify-btn').addEventListener('click', verifyPassword);
-    tabBar.querySelector('#ivac-otp-verify-btn').addEventListener('click', verifyOTP);
-    
-    
-    
-    
-    tabBar.querySelector('#ivac-tab-0').addEventListener('click', function (e) {
-        toggleTab(0);
-    });
-
-    tabBar.querySelector('#ivac-tab-1').addEventListener('click', async function (e) {
-        await stopAllRequests();
-    });
-    loginRow.appendChild(tabBar);
-
-
-
-
-
-
-
-
-
-
-
-
-    // First row of buttons
-    const firstRow = document.createElement('div');
-    firstRow.className = 'ivac-btn-row';
-
-    // App Info button
-    const appSubmitBtn = document.createElement('button');
-    appSubmitBtn.className = 'ivac-panel-btn';
-    appSubmitBtn.id = 'ivac-app-submit-btn';
-    appSubmitBtn.textContent = 'App Info';
-    appSubmitBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        sendDataToServer();
-    });
-
-    // Personal Info button
-    const personalSubmitBtn = document.createElement('button');
-    personalSubmitBtn.className = 'ivac-panel-btn';
-    personalSubmitBtn.id = 'ivac-personal-submit-btn';
-    personalSubmitBtn.textContent = 'Per Info';
-    personalSubmitBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        submitPersonalInfo();
-    });
-
-    firstRow.appendChild(appSubmitBtn);
-    firstRow.appendChild(personalSubmitBtn);
-
-    // Second row of buttons
-    const secondRow = document.createElement('div');
-    secondRow.className = 'ivac-btn-row';
-
-    // Overview button
-    const overviewBtn = document.createElement('button');
-    overviewBtn.className = 'ivac-panel-btn';
-    overviewBtn.id = 'ivac-overview-btn';
-    overviewBtn.textContent = 'Overview';
-    overviewBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        sendOverviewRequest();
-    });
-
-    // Settings button
-    const settingsBtn = document.createElement('button');
-    settingsBtn.className = 'ivac-panel-btn';
-    settingsBtn.id = 'ivac-settings-btn';
-    settingsBtn.textContent = 'Settings';
-    settingsBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        // Load saved data first
-        loadSavedData();
-
-        // Set current values in the modal
-        webFileInput.value = dynamicWebfileId || "";
-        inputFamilyCount.value = dynamicFamilyCount || 0;
-        highcomSelect.value = dynamicHighcom || 4;
-        updateIvacCenters();
-        setTimeout(() => {
-            ivacSelect.value = dynamicIvacId || 4;
-        }, 100);
-        visaTypeSelect.value = dynamicVisaType || 13;
-        visitPurposeTextarea.value = dynamicVisitPurpose || "";
-        inputFullName.querySelector('input').value = dynamicFullName || "";
-        inputEmail.querySelector('input').value = dynamicEmail || "";
-        inputPhone.querySelector('input').value = dynamicPhone || "";
-        tokenInput.value = authToken || "";
-
-        // Update family inputs with saved data
-        updateFamilyInputs();
-        setTimeout(() => {
-            familyMembers.forEach((member, index) => {
-                const nameInput = familyInputsContainer.querySelector(`input[data-index="${index}"][data-type="name"]`);
-                const webfileInput = familyInputsContainer.querySelector(`input[data-index="${index}"][data-type="webfile"]`);
-                if (nameInput) nameInput.value = member.name || "";
-                if (webfileInput) webfileInput.value = member.webfile || "";
-            });
-        }, 100);
-
-        modal.style.display = 'block';
-        smartPanel.classList.remove('visible');
-    });
-
-    secondRow.appendChild(overviewBtn);
-    secondRow.appendChild(settingsBtn);
-
-    // Third row of buttons
-    const thirdRow = document.createElement('div');
-    thirdRow.className = 'ivac-btn-row';
-
-
-
-
-    // Fourth row of buttons
-    const fourthRow = document.createElement('div');
-    fourthRow.className = 'ivac-btn-row';
-
-    // Send OTP button
-    const sendOtpBtn = document.createElement('button');
-    sendOtpBtn.className = 'ivac-panel-btn';
-    sendOtpBtn.id = 'ivac-send-otp-btn';
-    sendOtpBtn.textContent = 'Send OTP';
-    sendOtpBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        sendOTP(false);
-    });
-
-    // Resend OTP button
-    const resendOtpBtn = document.createElement('button');
-    resendOtpBtn.className = 'ivac-panel-btn';
-    resendOtpBtn.id = 'ivac-resend-otp-btn';
-    resendOtpBtn.textContent = 'Resend OTP';
-    resendOtpBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        sendOTP(true);
-    });
-
-    fourthRow.appendChild(sendOtpBtn);
-    fourthRow.appendChild(resendOtpBtn);
-
-    // Fifth row - OTP verification
-    const otpSection = document.createElement('div');
-    otpSection.id = 'ivac-otp-section';
-
-    const otpInput = document.createElement('input');
-    otpInput.id = 'ivac-otp-input';
-    otpInput.type = 'text';
-    otpInput.placeholder = 'Enter 6-digit OTP';
-    otpInput.maxLength = 6;
-    otpSection.appendChild(otpInput);
-
-    const verifyOtpBtn = document.createElement('button');
-    verifyOtpBtn.id = 'ivac-otp-verify';
-    verifyOtpBtn.textContent = 'Verify';
-    verifyOtpBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        verifyOTP(otpInput.value);
-    });
-    otpSection.appendChild(verifyOtpBtn);
-
-    // Sixth row - Date selection
-    const dateSection = document.createElement('div');
-    dateSection.id = 'ivac-date-section';
-
-    const dateInput = document.createElement('input');
-    dateInput.id = 'ivac-date-input';
-    dateInput.type = 'date';
-    dateSection.appendChild(dateInput);
-
-    const slotBtn = document.createElement('button');
-    slotBtn.id = 'ivac-slot-btn';
-    slotBtn.textContent = 'Get Slot';
-    slotBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        getSlotTimes();
-    });
-    dateSection.appendChild(slotBtn);
-
-    // Seventh row - Slot display (changed to dropdown)
-    const slotContainer = document.createElement('div');
-    slotContainer.style.position = 'relative';
-
-    const slotDisplay = document.createElement('div');
-    slotDisplay.id = 'ivac-slot-display';
-    slotDisplay.textContent = 'Select Appointment Time';
-    slotContainer.appendChild(slotDisplay);
-
-    const slotDropdown = document.createElement('div');
-    slotDropdown.id = 'ivac-slot-dropdown';
-    slotContainer.appendChild(slotDropdown);
-
-    // Add click event to show/hide dropdown
-    slotDisplay.addEventListener('click', function(e) {
-        e.stopPropagation();
-        slotDisplay.classList.toggle('dropdown-open');
-        slotDropdown.classList.toggle('show');
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!slotContainer.contains(e.target)) {
-            slotDisplay.classList.remove('dropdown-open');
+    slotInfo.available_slots.forEach(slot => {
+        const option = document.createElement('div');
+        option.className = 'slot-option';
+        option.textContent = `${slot.time_display} (${slot.availableSlot})`;
+        option.addEventListener('click', () => {
+            slotDisplay.textContent = option.textContent;
+            slotInfo.appointment_time = slot.time_display;
             slotDropdown.classList.remove('show');
-        }
+        });
+        slotDropdown.appendChild(option);
     });
+}
 
-    panelButtons.appendChild(slotContainer);
-
-    // Eighth row - Captcha section
-    const captchaSection = document.createElement('div');
-    captchaSection.id = 'ivac-captcha-section';
-
-    const captchaContainer = document.createElement('div');
-    captchaContainer.id = 'ivac-captcha-container';
-
-    const captchaImageContainer = document.createElement('div');
-    captchaImageContainer.id = 'ivac-captcha-image-container';
-    captchaImageContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%;">CAPTCHA</div>';
-    captchaContainer.appendChild(captchaImageContainer);
-
-    const captchaInputContainer = document.createElement('div');
-    captchaInputContainer.id = 'ivac-captcha-input-container';
-
-    const captchaInput = document.createElement('input');
-    captchaInput.id = 'ivac-captcha-input';
-    captchaInput.type = 'text';
-    captchaInput.placeholder = 'Enter CAPTCHA';
-    captchaInputContainer.appendChild(captchaInput);
-
-    captchaContainer.appendChild(captchaInputContainer);
-    captchaSection.appendChild(captchaContainer);
-
-    const captchaButtons = document.createElement('div');
-    captchaButtons.id = 'ivac-captcha-buttons';
-
-    const generateCaptchaBtn = document.createElement('button');
-    generateCaptchaBtn.id = 'ivac-captcha-generate';
-    generateCaptchaBtn.textContent = 'Generate';
-    generateCaptchaBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        generateCaptcha();
-    });
-    captchaButtons.appendChild(generateCaptchaBtn);
-
-    const verifyCaptchaBtn = document.createElement('button');
-    verifyCaptchaBtn.id = 'ivac-captcha-verify';
-    verifyCaptchaBtn.textContent = 'Verify';
-    verifyCaptchaBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        verifyCaptcha();
-    });
-    captchaButtons.appendChild(verifyCaptchaBtn);
-
-    const payNowBtn = document.createElement('button');
-    payNowBtn.id = 'ivac-pay-now-btn';
-    payNowBtn.textContent = 'Pay Now';
-    payNowBtn.addEventListener('click', function(e) {
-        if (!smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-            return;
-        }
-        payNow();
-    });
-    captchaButtons.appendChild(payNowBtn);
-
-    captchaSection.appendChild(captchaButtons);
-
-    // Payment link display
-    const paymentLinkElement = document.createElement('div');
-    paymentLinkElement.id = 'ivac-payment-link';
-    paymentLinkElement.addEventListener('click', function(e) {
-        if (paymentLink) {
-            GM_openInTab(paymentLink);
-        }
-    });
-
-    // Add all rows to panel
-    panelButtons.appendChild(loginRow);
-    panelButtons.appendChild(firstRow);
-    panelButtons.appendChild(secondRow);
-    panelButtons.appendChild(thirdRow);
-    panelButtons.appendChild(fourthRow);
-    panelButtons.appendChild(otpSection);
-    panelButtons.appendChild(dateSection);
-    panelButtons.appendChild(captchaSection);
-    panelButtons.appendChild(paymentLinkElement);
-
-    smartPanel.appendChild(panelButtons);
-    document.body.appendChild(smartPanel);
-
-    // Create toggle button for the panel (fixed position)
-    const togglePanelBtn = document.createElement('button');
-    togglePanelBtn.id = 'ivac-toggle-panel';
-    togglePanelBtn.innerHTML = '⚙️';
-    togglePanelBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        smartPanel.classList.toggle('visible');
-    });
-    document.body.appendChild(togglePanelBtn);
-
-    // Handle clicks outside the panel to close it
-    document.addEventListener('click', function(e) {
-        if (!smartPanel.contains(e.target) && e.target !== togglePanelBtn) {
-            smartPanel.classList.remove('visible');
-        }
-    });
-
-    // Prevent panel clicks from bubbling up when panel is visible
-    smartPanel.addEventListener('click', function(e) {
-        if (smartPanel.classList.contains('visible')) {
-            e.stopPropagation();
-        }
-    });
-
-    // Make panel draggable
-    $(smartPanel).draggable({
-        handle: '#ivac-smart-panel-header',
-        containment: 'window',
-        scroll: false,
-        start: function() {
-            $(this).css('transition', 'none');
-        },
-        stop: function() {
-            $(this).css('transition', 'all 0.3s ease');
-            savePanelSettings();
-        }
-    });
-
-    // Function to save panel position
-    function savePanelSettings() {
-        const panel = $('#ivac-smart-panel');
-        const settings = {
-            top: parseInt(panel.css('top')),
-            left: parseInt(panel.css('left')),
-            width: parseInt(panel.css('width')),
-            height: parseInt(panel.css('height'))
-        };
-        GM_setValue('ivacPanelSettings', settings);
-    }
-
-    // Initialize all data when script starts
-    function init() {
-        loadSavedData();
-
-        // Load saved panel position and size
-        const panelSettings = GM_getValue('ivacPanelSettings', null);
-        if (panelSettings) {
-            $(smartPanel).css({
-                top: panelSettings.top + 'px',
-                left: panelSettings.left + 'px'
+function createFormGroup(id, labelText, inputType = 'text', options = null) {
+    const group = document.createElement('div');
+    group.className = 'ivac-form-group';
+    const label = document.createElement('label');
+    label.htmlFor = id;
+    label.textContent = labelText;
+    group.appendChild(label);
+    let input;
+    if (inputType === 'select') {
+        input = document.createElement('select');
+        input.id = id;
+        if (options) {
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.text;
+                input.appendChild(option);
             });
         }
-
-        // Auto-fetch the auth token when the page loads
-        fetchAuthToken();
-    }
-
-    // Run initialization
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
     } else {
-        init();
+        input = document.createElement(inputType === 'textarea' ? 'textarea' : 'input');
+        input.id = id;
+        if (inputType !== 'textarea') input.type = inputType;
+        input.placeholder = labelText;
     }
-})();
+    group.appendChild(input);
+    return group;
+}
+
+function updateIvacCenters(highcomSelect, ivacSelect) {
+    const selectedHighCom = highcomSelect.value;
+    const ivacCenters = {
+        "1": [[17, "Dhaka (JFP)"], [8, "Mymensingh"], [9, "Barisal"], [12, "Jessore"], [20, "Satkhira"]],
+        "2": [[5, "Chittagong"], [21, "Cumilla"], [22, "Noakhali"], [23, "Brahmanbaria"]],
+        "3": [[2, "Rajshahi"], [7, "Rangpur"], [18, "Thakurgaon"], [19, "Bogura"], [24, "Kushtia"]],
+        "4": [[4, "Sylhet"]],
+        "5": [[3, "Khulna"]]
+    };
+    ivacSelect.innerHTML = '';
+    (ivacCenters[selectedHighCom] || []).forEach(([value, name]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.text = `IVAC, ${name}`;
+        ivacSelect.appendChild(option);
+    });
+}
+
+async function fetchAuthToken() {
+    authToken = localStorage.getItem('access_token') || GM_getValue('authToken', '');
+    if (authToken) {
+        document.getElementById('ivac-token-input').value = authToken;
+        updateStatus("Token loaded successfully.", "success");
+    } else {
+        updateStatus("No login token found.", "error");
+    }
+}
+
+// --- NEW: Clear Cache, Import, Export ---
+async function clearSiteData() {
+    try {
+        // Clear GM storage used by the script
+        const keysToClear = [
+            'dynamicHighcom', 'dynamicWebfileId', 'dynamicIvacId', 'dynamicVisaType',
+            'dynamicFamilyCount', 'dynamicVisitPurpose', 'dynamicFullName', 'dynamicEmail',
+            'dynamicPhone', 'familyMembers', 'authToken', 'panelVisible'
+        ];
+        keysToClear.forEach(key => GM_deleteValue(key));
+
+        // Clear browser storage for the current domain
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // Clear cookies for the current domain
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i];
+            const eqPos = cookie.indexOf("=");
+            const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+        }
+
+        // Clear Service Worker Caches
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(key => caches.delete(key)));
+        }
+
+        updateStatus('All site and script data cleared!', 'success');
+        // Reload data to reset the script's state and UI
+        authToken = '';
+        $('#ivac-token-input').val('');
+        loadSavedData();
+        populateForm();
+
+    } catch (error) {
+        console.error("Error clearing site data: ", error);
+        updateStatus(`Error clearing data: ${error.message}`, 'error');
+    }
+}
+
+function handleExport() {
+    try {
+        // Ensure current form data is captured before export
+        const dataToExport = {
+            dynamicHighcom: $('#file-highcom').val(),
+            dynamicIvacId: $('#file-ivac').val(),
+            dynamicWebfileId: $('#file-webfile').val(),
+            dynamicVisaType: $('#file-visatype').val(),
+            dynamicVisitPurpose: $('#file-visitpurpose').val(),
+            dynamicFullName: $('#file-fullname').val(),
+            dynamicEmail: $('#file-email').val(),
+            dynamicPhone: $('#file-phone').val(),
+            familyMembers: [],
+        };
+        const bulkText = $('#file-family-bulk-input').val().trim();
+        const lines = bulkText.split('\n').map(line => line.trim()).filter(line => line);
+        if (lines.length > 0 && lines.length % 2 === 0) {
+            for (let i = 0; i < lines.length; i += 2) {
+                dataToExport.familyMembers.push({ full_name: lines[i], webfile_id: lines[i + 1] });
+            }
+        }
+        dataToExport.dynamicFamilyCount = dataToExport.familyMembers.length;
+
+        const jsonString = JSON.stringify(dataToExport, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ivac_config_${dataToExport.dynamicWebfileId || 'data'}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        updateStatus('Data exported successfully!', 'success');
+    } catch (error) {
+        updateStatus(`Export failed: ${error.message}`, 'error');
+    }
+}
+
+function handleImport() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = readerEvent => {
+            try {
+                const content = readerEvent.target.result;
+                const importedData = JSON.parse(content);
+
+                dynamicHighcom = importedData.dynamicHighcom;
+                dynamicIvacId = importedData.dynamicIvacId;
+                dynamicWebfileId = importedData.dynamicWebfileId;
+                dynamicVisaType = importedData.dynamicVisaType;
+                dynamicVisitPurpose = importedData.dynamicVisitPurpose;
+                dynamicFullName = importedData.dynamicFullName;
+                dynamicEmail = importedData.dynamicEmail;
+                dynamicPhone = importedData.dynamicPhone;
+                familyMembers = importedData.familyMembers || [];
+                dynamicFamilyCount = familyMembers.length;
+
+                saveData();
+                populateForm();
+                updateStatus('Data imported successfully!', 'success');
+            } catch (error) {
+                updateStatus(`Import failed: ${error.message}`, 'error');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+
+// ==================== Panel Creation ====================
+const smartPanel = document.createElement('div');
+smartPanel.id = 'ivac-smart-panel';
+const panelHeader = document.createElement('div'); panelHeader.id = 'ivac-smart-panel-header';
+const panelTitle = document.createElement('div'); panelTitle.id = 'ivac-smart-panel-title'; panelTitle.innerHTML = `Rupon Modernization`;
+const panelClose = document.createElement('button'); panelClose.id = 'ivac-smart-panel-close'; panelClose.innerHTML = '&times;';
+panelHeader.appendChild(panelTitle); panelHeader.appendChild(panelClose);
+smartPanel.appendChild(panelHeader);
+const statusDisplay = document.createElement('div'); statusDisplay.id = 'status-display'; statusDisplay.innerHTML = '<span class="status-text">Ready</span>';
+smartPanel.appendChild(statusDisplay);
+
+const panelTabs = document.createElement('div'); panelTabs.id = 'ivac-panel-tabs';
+
+// --- MODIFIED: TABS WITH SVG ICONS ---
+const loginTab = document.createElement('div');
+loginTab.className = 'ivac-tab active';
+loginTab.dataset.tab = 'login';
+loginTab.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/></svg> Login`;
+
+const homeTab = document.createElement('div');
+homeTab.className = 'ivac-tab';
+homeTab.dataset.tab = 'home';
+homeTab.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146z"/></svg> Home`;
+
+const fileTab = document.createElement('div');
+fileTab.className = 'ivac-tab';
+fileTab.dataset.tab = 'file';
+fileTab.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zM4.5 9a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1h-7zm0 2a.5.5 0 0 1 0-1h7a.5.5 0 0 1 0 1h-7zm0 2a.5.5 0 0 1 0-1h4a.5.5 0 0 1 0 1h-4z"/></svg> File`;
+
+panelTabs.appendChild(loginTab); panelTabs.appendChild(homeTab); panelTabs.appendChild(fileTab);
+smartPanel.appendChild(panelTabs);
+
+// --- UPDATED LOGIN PANEL ---
+const loginContent = document.createElement('div');
+loginContent.className = 'ivac-tab-content active';
+loginContent.id = 'ivac-login-content';
+
+const mobileRow = document.createElement('div'); mobileRow.className = 'ivac-login-row';
+const mobileInput = document.createElement('input'); mobileInput.id = 'login-mobile'; mobileInput.placeholder = 'Mobile Number';
+const mobileVerifyBtn = document.createElement('button'); mobileVerifyBtn.className = 'ivac-panel-btn'; mobileVerifyBtn.id = 'login-btn-mobile-verify'; mobileVerifyBtn.textContent = 'Verify';
+mobileRow.appendChild(mobileInput); mobileRow.appendChild(mobileVerifyBtn);
+loginContent.appendChild(mobileRow);
+
+const passwordRow = document.createElement('div'); passwordRow.className = 'ivac-login-row';
+const passwordInput = document.createElement('input'); passwordInput.id = 'login-password'; passwordInput.type = 'password'; passwordInput.placeholder = 'Password';
+const sendOtpLoginBtn = document.createElement('button'); sendOtpLoginBtn.className = 'ivac-panel-btn'; sendOtpLoginBtn.id = 'login-btn-send-otp'; sendOtpLoginBtn.textContent = 'Send OTP';
+passwordRow.appendChild(passwordInput); passwordRow.appendChild(sendOtpLoginBtn);
+loginContent.appendChild(passwordRow);
+
+const otpRowLogin = document.createElement('div'); otpRowLogin.className = 'ivac-login-row';
+const otpInputLogin = document.createElement('input'); otpInputLogin.id = 'login-otp'; otpInputLogin.placeholder = 'OTP';
+const finalLoginBtn = document.createElement('button'); finalLoginBtn.className = 'ivac-panel-btn'; finalLoginBtn.id = 'login-btn-final'; finalLoginBtn.textContent = 'Login';
+otpRowLogin.appendChild(otpInputLogin); otpRowLogin.appendChild(finalLoginBtn);
+loginContent.appendChild(otpRowLogin);
+
+// NEW: Clear Cache Button
+const clearCacheBtn = document.createElement('button');
+clearCacheBtn.className = 'ivac-panel-btn';
+clearCacheBtn.id = 'login-btn-clear-cache';
+clearCacheBtn.textContent = 'Clear Cache';
+loginContent.appendChild(clearCacheBtn);
+
+// Smart Auth Token Input
+const tokenContainer = document.createElement('div'); tokenContainer.id = 'ivac-token-container';
+const tokenInput = document.createElement('input'); tokenInput.id = 'ivac-token-input'; tokenInput.placeholder = 'Paste & Auto-Save Auth Token';
+tokenContainer.appendChild(tokenInput);
+loginContent.appendChild(tokenContainer);
+
+// --- MODERNIZED HOME PANEL ---
+const homeContent = document.createElement('div'); homeContent.className = 'ivac-tab-content'; homeContent.id = 'ivac-home-content';
+const homeButtons = document.createElement('div'); homeButtons.id = 'ivac-smart-panel-buttons';
+
+const firstRow = document.createElement('div'); firstRow.className = 'ivac-btn-row';
+const appSubmitBtn = document.createElement('button'); appSubmitBtn.className = 'ivac-panel-btn'; appSubmitBtn.id = 'ivac-app-submit-btn'; appSubmitBtn.textContent = 'App Info';
+const personalSubmitBtn = document.createElement('button'); personalSubmitBtn.className = 'ivac-panel-btn'; personalSubmitBtn.id = 'ivac-personal-submit-btn'; personalSubmitBtn.textContent = 'Per Info';
+const overviewBtn = document.createElement('button'); overviewBtn.className = 'ivac-panel-btn'; overviewBtn.id = 'ivac-overview-btn'; overviewBtn.textContent = 'Overview';
+firstRow.appendChild(appSubmitBtn); firstRow.appendChild(personalSubmitBtn); firstRow.appendChild(overviewBtn);
+
+const otpRow = document.createElement('div'); otpRow.className = 'ivac-btn-row';
+const sendOtpBtn = document.createElement('button'); sendOtpBtn.className = 'ivac-panel-btn'; sendOtpBtn.id = 'ivac-send-otp-btn'; sendOtpBtn.textContent = 'Send OTP';
+const otpInput = document.createElement('input'); otpInput.id = 'ivac-otp-input'; otpInput.placeholder = 'OTP';
+const verifyOtpBtn = document.createElement('button'); verifyOtpBtn.className = 'ivac-panel-btn'; verifyOtpBtn.id = 'ivac-verify-otp-btn'; verifyOtpBtn.textContent = 'Verify';
+otpRow.appendChild(sendOtpBtn); otpRow.appendChild(otpInput); otpRow.appendChild(verifyOtpBtn);
+
+const dateSection = document.createElement('div'); dateSection.id = 'ivac-date-section';
+const dateInput = document.createElement('input'); dateInput.id = 'ivac-date-input'; dateInput.type = 'date';
+const slotBtn = document.createElement('button'); slotBtn.id = 'ivac-slot-btn'; slotBtn.textContent = 'Slot';
+const slotContainer = document.createElement('div'); slotContainer.id = 'ivac-slot-container';
+const slotDisplay = document.createElement('div'); slotDisplay.id = 'ivac-slot-display'; slotDisplay.textContent = 'Select Time';
+const slotDropdown = document.createElement('div'); slotDropdown.id = 'ivac-slot-dropdown';
+slotContainer.appendChild(slotDisplay); slotContainer.appendChild(slotDropdown);
+dateSection.appendChild(dateInput); dateSection.appendChild(slotBtn); dateSection.appendChild(slotContainer);
+
+// NEW: Re-arranged button row
+const bottomActionsRow = document.createElement('div'); bottomActionsRow.id = 'ivac-bottom-actions';
+const stopAllBtn = document.createElement('button'); stopAllBtn.className = 'ivac-panel-btn stop-btn'; stopAllBtn.textContent = 'Stop All';
+const payNowBtn = document.createElement('button'); payNowBtn.id = 'ivac-pay-now-btn'; payNowBtn.className = 'ivac-panel-btn'; payNowBtn.textContent = 'Pay Now';
+bottomActionsRow.appendChild(stopAllBtn);
+bottomActionsRow.appendChild(payNowBtn);
+
+// NEW: Container for payment link
+const paymentLinkContainer = document.createElement('div');
+paymentLinkContainer.id = 'ivac-payment-link-container';
+
+homeButtons.appendChild(firstRow);
+homeButtons.appendChild(otpRow);
+homeButtons.appendChild(dateSection);
+homeButtons.appendChild(bottomActionsRow);
+homeButtons.appendChild(paymentLinkContainer);
+homeContent.appendChild(homeButtons);
+
+
+// --- FILE/SETTINGS PANEL ---
+const fileContent = document.createElement('div'); fileContent.className = 'ivac-tab-content'; fileContent.id = 'ivac-file-content';
+const locationRow = document.createElement('div'); locationRow.className = 'ivac-file-row';
+locationRow.appendChild(createFormGroup('file-highcom', 'High Commission', 'select', [
+    {value: '1', text: 'Dhaka'}, {value: '2', text: 'Chittagong'}, {value: '3', text: 'Rajshahi'},
+    {value: '4', text: 'Sylhet'}, {value: '5', text: 'Khulna'}
+]));
+locationRow.appendChild(createFormGroup('file-ivac', 'IVAC Center', 'select'));
+fileContent.appendChild(locationRow);
+fileContent.appendChild(createFormGroup('file-webfile', 'Webfile Number'));
+fileContent.appendChild(createFormGroup('file-visatype', 'Visa Type', 'select', [
+    {value: '3', text: 'TOURIST VISA'}, {value: '13', text: 'MEDICAL/MEDICAL ATTENDANT VISA'},
+    {value: '1', text: 'BUSINESS VISA'}, {value: '6', text: 'ENTRY VISA'},
+    {value: '2', text: 'STUDENT VISA'}, {value: '19', text: 'DOUBLE ENTRY VISA'}
+]));
+const familyBulkInputGroup = createFormGroup('file-family-bulk-input', 'Family Members (Paste Here)', 'textarea');
+const familyTextarea = familyBulkInputGroup.querySelector('textarea');
+familyTextarea.rows = 8;
+fileContent.appendChild(familyBulkInputGroup);
+fileContent.appendChild(createFormGroup('file-visitpurpose', 'Visit Purpose', 'textarea'));
+fileContent.appendChild(createFormGroup('file-fullname', 'Full Name'));
+fileContent.appendChild(createFormGroup('file-email', 'Email'));
+fileContent.appendChild(createFormGroup('file-phone', 'Phone Number'));
+
+// NEW: Import/Export Buttons
+const importExportActions = document.createElement('div');
+importExportActions.id = 'ivac-file-import-export-actions';
+const importBtn = document.createElement('button');
+importBtn.id = 'ivac-file-import-btn'; importBtn.className = 'ivac-panel-btn'; importBtn.textContent = 'Import';
+const exportBtn = document.createElement('button');
+exportBtn.id = 'ivac-file-export-btn'; exportBtn.className = 'ivac-panel-btn'; exportBtn.textContent = 'Export';
+importExportActions.appendChild(importBtn);
+importExportActions.appendChild(exportBtn);
+fileContent.appendChild(importExportActions);
+
+const fileActions = document.createElement('div'); fileActions.id = 'ivac-file-actions';
+const cancelBtn = document.createElement('button'); cancelBtn.id = 'ivac-file-cancel-btn'; cancelBtn.className = 'ivac-panel-btn'; cancelBtn.textContent = 'Cancel';
+const clearBtn = document.createElement('button'); clearBtn.id = 'ivac-file-clear-btn'; clearBtn.className = 'ivac-panel-btn'; clearBtn.textContent = 'Clear';
+const saveBtn = document.createElement('button'); saveBtn.id = 'ivac-file-save-btn'; saveBtn.className = 'ivac-panel-btn'; saveBtn.textContent = 'Save';
+fileActions.appendChild(cancelBtn);
+fileActions.appendChild(clearBtn);
+fileActions.appendChild(saveBtn);
+fileContent.appendChild(fileActions);
+
+smartPanel.appendChild(loginContent);
+smartPanel.appendChild(homeContent);
+smartPanel.appendChild(fileContent);
+document.body.appendChild(smartPanel);
+
+const togglePanelBtn = document.createElement('button');
+togglePanelBtn.id = 'ivac-toggle-panel'; togglePanelBtn.innerHTML = '⚙️';
+document.body.appendChild(togglePanelBtn);
+
+// --- Event Listeners ---
+togglePanelBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = smartPanel.classList.toggle('visible');
+    GM_setValue('panelVisible', isVisible); // NEW: Save panel state
+});
+
+panelClose.addEventListener('click', (e) => {
+    e.stopPropagation();
+    smartPanel.classList.remove('visible');
+    GM_setValue('panelVisible', false); // NEW: Save panel state
+});
+
+clearCacheBtn.addEventListener('click', clearSiteData);
+mobileVerifyBtn.addEventListener('click', handleMobileVerify);
+sendOtpLoginBtn.addEventListener('click', handleLoginSendOtp);
+finalLoginBtn.addEventListener('click', handleLoginVerifyOtp);
+
+appSubmitBtn.addEventListener('click', handleAppInfo);
+personalSubmitBtn.addEventListener('click', handlePersonalInfo);
+overviewBtn.addEventListener('click', handleOverview);
+sendOtpBtn.addEventListener('click', handleOtpRequest); // MODIFIED: Pointing to the new handler
+verifyOtpBtn.addEventListener('click', handleVerifyPaymentOtp);
+slotBtn.addEventListener('click', getSlot);
+payNowBtn.addEventListener('click', payNow);
+stopAllBtn.addEventListener('click', stopAllRequests);
+slotDisplay.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('ivac-slot-dropdown').classList.toggle('show');
+});
+
+// Auto-save token listener
+tokenInput.addEventListener('input', () => {
+    authToken = tokenInput.value;
+    GM_setValue('authToken', authToken);
+    updateStatus('Auth Token auto-saved!', 'success');
+});
+
+// File Panel Buttons
+cancelBtn.addEventListener('click', () => { document.querySelector('.ivac-tab[data-tab="home"]').click(); });
+clearBtn.addEventListener('click', clearSavedData);
+importBtn.addEventListener('click', handleImport);
+exportBtn.addEventListener('click', handleExport);
+
+saveBtn.addEventListener('click', () => {
+    dynamicHighcom = document.getElementById('file-highcom').value;
+    dynamicIvacId = document.getElementById('file-ivac').value;
+    dynamicWebfileId = document.getElementById('file-webfile').value;
+    dynamicVisaType = document.getElementById('file-visatype').value;
+    dynamicVisitPurpose = document.getElementById('file-visitpurpose').value;
+    dynamicFullName = document.getElementById('file-fullname').value;
+    dynamicEmail = document.getElementById('file-email').value;
+    dynamicPhone = document.getElementById('file-phone').value;
+
+    const bulkText = document.getElementById('file-family-bulk-input').value.trim();
+    const lines = bulkText.split('\n').map(line => line.trim()).filter(line => line);
+    if (lines.length > 0 && lines.length % 2 !== 0) {
+        return updateStatus('Family data incomplete. Each member needs a name and webfile number on separate lines.', 'error');
+    }
+    const numMembers = lines.length / 2;
+    if (numMembers > 4) {
+        return updateStatus('Error: A maximum of 4 family members is allowed.', 'error');
+    }
+    dynamicFamilyCount = numMembers;
+    familyMembers = [];
+    for (let i = 0; i < lines.length; i += 2) {
+        familyMembers.push({ full_name: lines[i], webfile_id: lines[i + 1] });
+    }
+    saveData();
+    updateStatus('File information saved!', 'success');
+    document.querySelector('.ivac-tab[data-tab="home"]').click(); // Switch to home tab
+});
+
+document.getElementById('file-highcom').addEventListener('change', function() {
+    updateIvacCenters(this, document.getElementById('file-ivac'));
+});
+
+panelTabs.addEventListener('click', (e) => {
+    const tab = e.target.closest('.ivac-tab');
+    if (!tab) return;
+    document.querySelectorAll('.ivac-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.ivac-tab-content').forEach(c => c.style.display = 'none');
+    tab.classList.add('active');
+    const targetContent = document.getElementById(`ivac-${tab.dataset.tab}-content`);
+    if(targetContent) targetContent.style.display = 'block';
+    if (tab.dataset.tab === 'file') {
+        document.getElementById('file-highcom').dispatchEvent(new Event('change'));
+    }
+});
+
+function populateForm() {
+    $('#file-highcom').val(dynamicHighcom);
+    $('#file-webfile').val(dynamicWebfileId);
+    $('#file-visatype').val(dynamicVisaType);
+    $('#file-visitpurpose').val(dynamicVisitPurpose);
+    $('#file-fullname').val(dynamicFullName);
+    $('#file-email').val(dynamicEmail);
+    $('#file-phone').val(dynamicPhone);
+    const familyText = familyMembers.map(member => `${member.full_name}\n${member.webfile_id}`).join('\n');
+    $('#file-family-bulk-input').val(familyText);
+    updateIvacCenters(document.getElementById('file-highcom'), document.getElementById('file-ivac'));
+    setTimeout(() => { $('#file-ivac').val(dynamicIvacId); }, 100);
+}
+
+function init() {
+    loadSavedData();
+    fetchAuthToken();
+    document.querySelectorAll('.ivac-tab-content').forEach(c => c.style.display = 'none');
+    const activeTab = document.querySelector('.ivac-tab.active');
+    if (activeTab) {
+        const targetContent = document.getElementById(`ivac-${activeTab.dataset.tab}-content`);
+        if(targetContent) targetContent.style.display = 'block';
+    }
+    populateForm();
+    updateStatus("Panel ready.", "success");
+    $('#ivac-smart-panel').draggable({
+        handle: "#ivac-smart-panel-header",
+        start: function(event, ui) {
+            $(this).css({ top: ui.position.top, left: ui.position.left, bottom: 'auto', right: 'auto' });
+        }
+    });
+
+    // MODIFIED: Ensure the panel is always minimized on page load.
+    smartPanel.classList.remove('visible');
+    GM_setValue('panelVisible', false);
+
+
+    const events = ['contextmenu', 'copy', 'cut', 'paste'];
+    events.forEach(event => {
+        document.body.addEventListener(event, e => e.stopImmediatePropagation(), true);
+    });
+
+}
+if(document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+}else if(document.readyState === 'interactive') {
+    window.addEventListener('load', init);
+}else {
+    init();
+}
