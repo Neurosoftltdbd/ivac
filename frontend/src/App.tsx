@@ -5,7 +5,7 @@ import LoginPage from "./LoginPage";
 import NotFoundPage from "./NotFoundPage";
 import ProfilePage from "./dashboard/ProfilePage";
 import SettingsPage from "./dashboard/SettingsPage";
-import IvacUserPage from "./dashboard/IvacUserPage";
+import IvacCustomerPage from "./dashboard/IvacCustomerPage.tsx";
 
 function App() {
   
@@ -20,7 +20,7 @@ function App() {
         {path:"/dashboard", element:<DashboardPage/>},
         {path:"/settings", element:<SettingsPage/>},
         {path:"/profile", element:<ProfilePage/>},
-        {path:"/ivac-user", element:<IvacUserPage/>},
+        {path:"/ivac-customer", element:<IvacCustomerPage/>},
 
     ]
 
