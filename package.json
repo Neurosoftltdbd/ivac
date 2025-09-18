@@ -5,10 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
+    "start": "node app.js",
     "dev": "nodemon app.js",
-    "build": "uglifyjs IVAC.js -o script.js",
-    "ts": "nodemon ts.js"
+    "build": "uglifyjs IVAC.js -o script.js"
   },
   "repository": {
     "type": "git",
@@ -22,10 +21,9 @@
   },
   "homepage": "https://github.com/Neurosoftltdbd/ivac#readme",
   "dependencies": {
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "mongoose": "^8.18.1",
     "nodemon": "^3.1.10"
-  },
-  "devDependencies": {
-
   }
 }
