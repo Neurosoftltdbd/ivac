@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-export default function DashboardLayout(children: { children: React.ReactNode }) {
+export default function DashboardLayout(children) {
     const sideBarLinks = [
         {name: 'Home', path: '/'},
         {name:"Ivac Customer", path:"/ivac-customer"},

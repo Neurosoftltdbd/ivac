@@ -1,11 +1,11 @@
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import DashboardPage from "./dashboard/DashboardPage";
-import LoginPage from "./LoginPage";
-import NotFoundPage from "./NotFoundPage";
-import ProfilePage from "./dashboard/ProfilePage";
-import SettingsPage from "./dashboard/SettingsPage";
-import IvacCustomerPage from "./dashboard/IvacCustomerPage.tsx";
+import DashboardPage from "./dashboard/DashboardPage.jsx";
+import LoginPage from "./LoginPage.jsx";
+import NotFoundPage from "./NotFoundPage.jsx";
+import ProfilePage from "./dashboard/ProfilePage.jsx";
+import SettingsPage from "./dashboard/SettingsPage.jsx";
+import IvacCustomerPage from "./dashboard/IvacCustomerPage.jsx";
 
 function App() {
   

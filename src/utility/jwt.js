@@ -1,6 +1,6 @@
-const jwt=require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 
-exports.encodeToken = (email, userId, role) => {
+const encodeToken = (email, userId, role) => {
     const key = "1234-abcd";
     const expire = { expiresIn: "30d" };
     const payload = { email: email, userId: userId , role: role };
@@ -9,9 +9,7 @@ exports.encodeToken = (email, userId, role) => {
 
 
 
-
-
-exports.decodeToken=(token)=>{
+const decodeToken=(token)=>{
     try{
         const key = "1234-abcd";
         return jwt.verify(token, key);
@@ -20,3 +18,5 @@ exports.decodeToken=(token)=>{
         return e;
     }
 }
+
+module.exports={encodeToken, decodeToken};

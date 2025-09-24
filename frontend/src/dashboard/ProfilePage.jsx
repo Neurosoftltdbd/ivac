@@ -1,0 +1,47 @@
+import DashboardLayout from './DashboardLayout.jsx'
+import userState from "../state/userState";
+import {useEffect} from "react";
+
+export default function ProfilePage() {
+    const {profileRead, profileData} = userState();
+
+    useEffect(()=>{
+        (async ()=>{
+            await profileRead();
+        })()
+    },[]);
+
+    console.log("Profile Data: ", profileData);
+
+
+  return (
+    <>
+        <DashboardLayout>
+            <h1 className='text-3xl font-bold text-gray-800'>Profile Page</h1>
+            <hr/>
+            <div className='flex flex-col gap-4 w-[400px] p-4 my-4 rounded-lg shadow-lg'>
+                <img src="/person.svg" className='w-16 h-16 border border-gray-300 p-3' alt="" />
+                <div className='flex flex-col gap-1'>
+                    <label htmlFor="name">Name</label>
+                    <input value={profileData.name || ''} readOnly className='border border-gray-300 rounded bg-white py-2 px-3' type="text"/>
+                </div>
+                <div className='flex flex-col gap-1'>
+                    <label htmlFor="email">Email</label>
+                    <input value={profileData.email || ''} readOnly className='border border-gray-300 rounded bg-white py-2 px-3' type="email"/>
+                </div>
+                <div className='flex flex-col gap-1'>
+                    <label htmlFor="phone">Phone</label>
+                    <input value={profileData.phone || ''} readOnly className='border border-gray-300 rounded bg-white py-2 px-3' type="tel"/>
+                </div>
+                <div className='flex flex-col gap-1'>
+                    <label htmlFor="address">Address</label>
+                    <input value={profileData.address || ''} readOnly className='border border-gray-300 rounded bg-white py-2 px-3' type="text"/>
+                </div>
+
+                <button className='bg-green-600 text-white rounded px-4 py-2 cursor-pointer hover:bg-green-700 w-fit mx-auto'>Update</button>
+
+            </div>
+        </DashboardLayout>
+    </>
+  )
+}

@@ -1,29 +1,28 @@
 const UserModel = require("../model/userModel");
-const jwt = require("../utility/jwt");
-const mongoose = require("mongoose");
-const { encodeToken } = jwt;
+const {encodeToken} = require("../utility/jwt");
 
-exports.userLogin = async (req, res) => {
+
+const userLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await UserModel.find({ email: email, password: password });
-
         if (user.length > 0) {
             const userId = user[0]._id;
             const role = user[0].role;
-            const token = encodeToken(email, userId, role);
+            const token = await encodeToken(email, userId, role);
             const cookieOption = { expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), httpOnly: false };
             res.cookie("token", token, cookieOption);
+            res.setHeader("token", token);
             res.json({ status: "success", token: token });
         } else {
             res.json({ status: "userNotFound" });
         }
     } catch (error) {
-        res.json({ status: "error", data: error });
+        res.json({ status: "error", data: error.message });
     }
 }
 
-exports.userRegistration = async (req, res) => {
+const userRegistration = async (req, res) => {
     try {
         const reqBody = req.body;
         const user = await UserModel.find({ email: reqBody.email })
@@ -38,7 +37,9 @@ exports.userRegistration = async (req, res) => {
     }
 }
 
-exports.userProfileRead=async (req, res)=>{
+
+
+const userProfileRead = async (req, res) => {
     try {
         const {userId} = req.headers;
         console.log(userId);
@@ -50,7 +51,8 @@ exports.userProfileRead=async (req, res)=>{
 }
 
 
-exports.userProfileUpdate=async (req, res)=>{
+
+const userProfileUpdate = async (req, res) => {
     try {
         const {userId} = req.body;
         const {name, email, password, role, phone, address} = req.body;
@@ -60,3 +62,5 @@ exports.userProfileUpdate=async (req, res)=>{
         res.json({status:"error", data:error});
     }
 }
+
+module.exports = {userLogin, userRegistration, userProfileRead, userProfileUpdate};

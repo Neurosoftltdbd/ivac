@@ -1,9 +1,8 @@
 
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import {userState} from "./state/userState.ts";
+import userState from "./state/userState";
 
-export let isAdmin = false;
 export default function LoginPage() {
   const navigate = useNavigate();
   const {userForm,userFormOnChange, userLogin} = userState();
