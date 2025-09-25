@@ -1,41 +1,36 @@
-# ivac
-// @match        https://payment.ivacbd.com/*
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-// @match        https://nhrepon-portfolio.vercel.app/*
+## Getting Started
 
-https://api-payment.ivacbd.com/api/v2/mobile-verify
-post
-{mobile_no: "01829938427"}
+First, run the development server:
 
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-https://api-payment.ivacbd.com/api/v2/login
-post
-{mobile_no: "01829938427", password: "Repon7248"}
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
 
-https://api-payment.ivacbd.com/api/v2/login-otp
-{mobile_no: "01829938427", password: "Repon7248", otp: "818941"}
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-{
-    "status": "success",
-    "status_code": 200,
-    "message": "Login Successful",
-    "data": {
-        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiNjc4YjAwYjRhZTRiOWM1YmY0ODE1YTQxNWY0NmRjMWE0ZTczMDU5ZjE0MDYyN2E2YzE1NzkyMjllZDgzZGMyNWY3OWI4MjAzMmNmOWU3YzYiLCJpYXQiOjE3NTUwNjEyOTIuNjI3NDk2LCJuYmYiOjE3NTUwNjEyOTIuNjI3NSwiZXhwIjoxNzU1MDY0ODkyLjYxODk4MSwic3ViIjoiMTIzNjEwIiwic2NvcGVzIjpbXX0.GAtUOh-LT_Hbc6LnTchSYt86dF794pQq1dla8H3FrGvkA1eXlTFBbsJ8nxgj98XTRlwYoGOKlujXjiu2PSvEwsLDaXOpqPGUCADboQxazINIJWAf9BJU5nEZVIVs-KQ9oHeAANp2pnUOWrSxJsA1_Bbk-IqWe6Mh8PaGhpJmnwAaMkN2THv_nYYPiI5vOqCO6c9l9JWdGZvjWY-uDQO78WELBR7Y49A-eya1KzF3N1aIZ80Fc_gGT4Z7MQyLziNeBDT29ifFWacS8X29EBPQe9-cO_L62GuEHTO0FYBWKbgmTDIvZItgl7iiNqx7B0kjl34corGnzgqSDAtooRGdpkKYIQ7nqYJz0x2hf5DvbkDVWyHZXs34widTxUEIJ1aRr1li4maKBlD3owQ6nDytRFGhPqpDaorV_0C88UnEQOEFPx_y83pB2B6CeRhzEDuAdVnEkSGMmZrIy_Rt8FWlDOpD85Wld636QWzgsL0D8gonDEtpeoORjwuf81RSkzvGoyDcmS1tpFpTc16wvhSVRXlxxxwJxHZ9DJYGwdrJiyb6cLUYb2Nf37EZ6U7dE-dyw_t2Z5zpSf7TgiZgjU5SsrJiV8qmcPLbXG3fi2sFTgb3YY4b-RpclK8f0hl15rwTK_QrN7ftCSvm8EO-lV7WOe8rCfl7kRH9fnIPkwpOj4A",
-        "token_type": "Bearer",
-        "expires_at": "2025-08-13T06:01:32.000000Z",
-        "name": "Nur Hossain",
-        "email": "nurhossainrepon7248@gmail.com",
-        "mobile_no": "01829938427",
-        "profile_image": ""
-    },
-    "meta": []
-}
+## Learn More
 
+To learn more about Next.js, take a look at the following resources:
 
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-https://obf-io.deobfuscate.io/
+## Deploy on Vercel
 
-https://obfuscator.io/
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
