@@ -1,20 +1,12 @@
 import {create} from "zustand";
 import axios from "axios";
 
-export interface UserProfileInterface{
-    name:string,
-    email:string,
-    password:string,
-    role:string,
-    phone:string,
-    address:string
-}
-
 interface userStateInterface{
     userForm:{email:string, password:string},
     userFormOnChange:(name:string, value:string)=>void,
     userLogin:(userData:object)=>Promise<{status:string, data:object}>,
-    profileRead:()=>Promise<{status:string, data:UserProfileInterface}>
+    profileData:{name:string, email:string, password:string},
+    profileRead:()=>Promise<{status:string, data:object}>
 }
 export const userState = create<userStateInterface>((set)=>({
     userForm:{email:'', password:''},
@@ -30,9 +22,11 @@ export const userState = create<userStateInterface>((set)=>({
         const response = await axios.post('http://localhost:8080/api/v2/login', userData);
         return response.data;
     },
+    profileData:{},
     profileRead:async ()=>{
         const response = await axios.get('http://localhost:8080/api/v2/profile');
-        return response.data as {status:string, data:UserProfileInterface};
+        set({profileData:response.data});
+        return response.data;
     }
 
 }));

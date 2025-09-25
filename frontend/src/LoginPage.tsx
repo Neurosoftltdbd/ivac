@@ -26,8 +26,11 @@ export default function LoginPage() {
   }
 
   return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
-        <div className='w-[400px] bg-gray-300 p-8 rounded shadow-lg'>
+      <div className="min-h-screen flex flex-col items-center justify-center">
+          <video autoPlay loop muted className="absolute w-full h-full object-cover opacity-50">
+            <source src="/video.mp4" type="video/mp4" />
+          </video>
+        <div className='w-[400px] bg-gray-300 backdrop-blur-lg opacity-80 p-8 rounded shadow-lg'>
           <h2 className='text-3xl text-green-700 my-2'>Login to Admin Area</h2>
           <div className="flex flex-col gap-4 p-3 w-full">
             <input value={userForm.email} onChange={(e)=>{userFormOnChange("email", e.target.value)}} className='border border-gray-300 rounded bg-white py-2 px-3' type="email" placeholder='Enter email address'/>
