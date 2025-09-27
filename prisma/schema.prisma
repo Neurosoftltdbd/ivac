@@ -3,7 +3,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/prisma"
 }
 
 datasource db {
@@ -19,13 +18,26 @@ model User {
   name      String?
   email     String   @unique
   password  String
-  role      String   @default("USER")
+  role      EnumRole @default(user)
+  image     String?  @default("/person.svg")
   mobile    String?
   address   String?
+  status    EnumStatus? @default(active)
   codes     IvacPanelCode[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+enum EnumRole {
+  user
+  admin
+}
+enum EnumStatus {
+  active
+  inactive
+}
+
+
+
 
 model IvacPanelCode {
   id        Int      @id @default(autoincrement())
@@ -44,7 +56,7 @@ model IvacCustomer {
   email     String   @unique
   mobile    String?
   address   String?
-  status    String   @default("ACTIVE")
+  status    String   @default("active")
   deviceId String?
   deviceType String?
   userAgent String?

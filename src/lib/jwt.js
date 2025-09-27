@@ -1,4 +1,5 @@
-import jwt from "jsonwebtoken";
+const jwt = require("jsonwebtoken");
+const { jwtVerify } = require("jose");
 
 export const encodeToken = (email, userId, role) => {
     const key = "1234-abcd";
@@ -9,14 +10,20 @@ export const encodeToken = (email, userId, role) => {
 
 
 
-export const decodeToken=(token)=>{
-    try{
-        const key = "1234-abcd";
-        return jwt.verify(token, key);
-    }
-    catch (e) {
-        return e;
-    }
+// export const decodeToken=(token)=>{
+//     return jwt.verify(token, "1234-abcd");
+// }
+
+
+const key = new TextEncoder().encode('1234-abcd');
+
+export async function decodeToken(token) {
+  try {
+    const { payload } = await jwtVerify(token, key);
+    return payload;
+  } catch (e) {
+    return null;
+  }
 }
 
 

@@ -1,5 +1,4 @@
 'use client';
-import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import userState from '@/state/userState';
 import { useRouter } from 'next/navigation';
@@ -9,17 +8,18 @@ export default function Home() {
 
   const {userForm,userFormOnChange, userLogin} = userState();
 
-  useEffect(()=>{
-    if(document.cookie.includes("token")){
-      router.push('/dashboard');
-    }
-  },[]);
+  // useEffect(()=>{
+  //   if(document.cookie.includes("token")){
+  //     router.push('/dashboard');
+  //   }
+  // },[]);
 
 
   const handleLogin = async () => {
     if (userForm.email !== "" && userForm.password !== "") {
-        const response = await userLogin(userForm);
+        const response = await userLogin({ email: userForm.email, password: userForm.password });
         if(response.status === "success"){
+          sessionStorage.setItem('userData', JSON.stringify(response.data));
             router.push('/dashboard');
             toast.success('Login successful');
         }else {
@@ -35,8 +35,8 @@ export default function Home() {
         <div className='w-[400px] bg-gray-300 p-8 rounded shadow-lg'>
           <h2 className='text-3xl text-green-700 my-2'>Login to Admin Area</h2>
           <div className="flex flex-col gap-4 p-3 w-full">
-            <input value={userForm.email} onChange={(e)=>{userFormOnChange("email", e.target.value)}} className='border border-gray-300 rounded bg-white py-2 px-3' type="email" placeholder='Enter email address'/>
-            <input value={userForm.password} onChange={(e)=>{userFormOnChange("password", e.target.value)}} className='border border-gray-300 rounded bg-white py-2 px-3' type="password" placeholder='Enter password'/>
+            <input value={userForm.email ?? ""} onChange={(e)=>{userFormOnChange("email", e.target.value)}} className='border border-gray-300 rounded bg-white py-2 px-3' type="email" placeholder='Enter email address'/>
+            <input value={userForm.password ?? ""} onChange={(e)=>{userFormOnChange("password", e.target.value)}} className='border border-gray-300 rounded bg-white py-2 px-3' type="password" placeholder='Enter password'/>
             <button onClick={handleLogin} className='bg-green-600 text-white rounded px-4 py-2 cursor-pointer hover:bg-green-700 w-fit mx-auto'>Login</button>
           </div>
         </div>
