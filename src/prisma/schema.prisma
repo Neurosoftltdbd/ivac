@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int             @id @default(autoincrement())
+  name      String?
+  email     String          @unique
+  password  String
+  role      String          @default("USER")
+  mobile    String?
+  address   String?
+  codes     IvacPanelCode[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model IvacPanelCode {
+  id             Int      @id @default(autoincrement())
+  code           String
+  obsfucatedCode String
+  userId         Int?
+  user           User?    @relation(fields: [userId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model IvacCustomer {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  mobile     String?
+  address    String?
+  status     String   @default("ACTIVE")
+  deviceId   String?
+  deviceType String?
+  userAgent  String?
+  ipAddress  String?
+  browser    String?
+  os         String?
+  country    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

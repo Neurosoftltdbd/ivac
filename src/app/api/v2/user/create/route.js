@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req) {
     try {
         const {name, email, password, role, mobile, address, image } = await req.json();
-        if (!email || !password) {
-            return NextResponse.json({ status: "invalidData", message: "Email and password are required" });
+        if (!email || !password || !name || !role) {
+            return NextResponse.json({ status: "invalidData", message: "Name, Email, password and role are required" });
         }
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({

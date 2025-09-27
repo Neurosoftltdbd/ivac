@@ -8,9 +8,13 @@ export default function CreateUserPage() {
     const router = useRouter();
     const { userFormOnChange, userForm, createUser } = userState();
     const handleCreateUser = async () => {
+        if (!userForm.name || !userForm.email || !userForm.password) {
+            toast.error('Please, Fill all required fields');
+            return;
+        }
         const response = await createUser(userForm);
         if (response.status === 'success') {
-            router.push('/dashboard/profile');
+            router.push('/dashboard/user-list');
             toast.success('User created successfully');
         } else {
             toast.error('Error creating user: ' + response.message);
@@ -52,6 +56,7 @@ export default function CreateUserPage() {
             <div className='flex flex-col gap-1'>
                 <label htmlFor="status">Status</label>
                 <select value={userForm.status} onChange={(e)=>{userFormOnChange('status', e.target.value)}} className='border border-gray-300 rounded bg-white py-2 px-3 w-full' name="status" id="status">
+                    <option value="">Select Status</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                 </select>
@@ -60,7 +65,8 @@ export default function CreateUserPage() {
             <div className='flex flex-col gap-1'>
                 <label htmlFor="role">Role</label>
                 <select value={userForm.role} onChange={(e)=>{userFormOnChange('role', e.target.value)}} className='border border-gray-300 rounded bg-white py-2 px-3 w-full' name="role" id="role">
-                    <option selected value="user">User</option>
+                    <option value="">Select Role</option>
+                    <option value="user">User</option>
                     <option value="admin">Admin</option>
                 </select>
             </div>

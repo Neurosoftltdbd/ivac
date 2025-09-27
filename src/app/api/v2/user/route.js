@@ -22,6 +22,7 @@ export async function POST(req) {
             const response = NextResponse.json({ status: "success", message: "User logged in successfully", token: token, data: user });
             response.cookies.set("token", token, cookieOption);
             response.headers.set("token", token);
+            response.cookies.set("userData", JSON.stringify(user));
             return response;
         } else {
             return NextResponse.json({ status: "userNotFound", message: "User not found" });

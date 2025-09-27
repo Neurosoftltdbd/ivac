@@ -1,7 +1,7 @@
 export function isAdmin() {
-  if (typeof window !== 'undefined' && sessionStorage.getItem('userData')) {
+  if (typeof window !== 'undefined' && cookieStore.get('userData')) {
     try {
-      return JSON.parse(sessionStorage.getItem('userData')).role === 'admin';
+      return JSON.parse(cookieStore.get('userData')).role === 'admin';
     } catch {
       return false;
     }

@@ -24,6 +24,7 @@ model User {
   address   String?
   status    EnumStatus? @default(active)
   codes     IvacPanelCode[]
+  customers IvacCustomer[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -56,8 +57,20 @@ model IvacCustomer {
   email     String   @unique
   mobile    String?
   address   String?
-  status    String   @default("active")
-  deviceId String?
+  status    EnumStatus @default(active)
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  device    DeviceList[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DeviceList{
+  id        Int      @id @default(autoincrement())
+  deviceId String   @unique
+  status EnumStatus @default(active)
+  ivacCustomer IvacCustomer? @relation(fields: [ivacCustomerId], references: [id])
+  ivacCustomerId Int?
   deviceType String?
   userAgent String?
   ipAddress String?

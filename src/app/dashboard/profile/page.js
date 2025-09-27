@@ -6,13 +6,10 @@ import {toast} from "react-hot-toast";
 import { isAdmin } from '@/lib/utility';
 import Link from 'next/link';
 export default function page() {
-    const {profileRead, profileData, profileUpdate, userFormOnChange, userForm, getUserList, userList} = userState();
+    const {profileRead, profileData, profileUpdate, userFormOnChange, userForm} = userState();
     useEffect(()=>{
         (async ()=>{
             await profileRead();
-            if(isAdmin()){
-                await getUserList();
-            }
         })()
     },[]);
 
@@ -69,15 +66,7 @@ export default function page() {
                 <button onClick={handleProfileUpdate} className='bg-green-600 text-white rounded px-4 py-2 cursor-pointer hover:bg-green-700 w-fit mx-auto'>Update</button>
 
             </div>
-            <div>
-                {
-                    isAdmin && userList.length > 0 && userList.map((user, index)=>{
-                        return (<>
-                        <div key={index}>{user.name}</div>
-                        </>);
-                    })
-                }
-            </div>
+            
             </div>
     </>
   )

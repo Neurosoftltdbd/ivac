@@ -18,6 +18,7 @@ const userState = create((set)=>({
         return response.data;
     },
     profileRead: async ()=>{
+        set({profileData:{}, userForm:{email:'', password:'', name:'', mobile:'', address:''}})
         const response = await axios.get('/api/v2/user');
         set({profileData:response.data.data, userForm:response.data.data})
         return response.data;
@@ -38,7 +39,8 @@ const userState = create((set)=>({
     },
     userList:[],
     getUserList: async ()=>{
-        const response = await axios.get('/api/v2/user?list=all');
+        set({userList:[]});
+        const response = await axios.get('/api/v2/user/user-list');
         set({userList:response.data.data})
         return response.data;
     }

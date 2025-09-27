@@ -2,7 +2,7 @@
 import { useEffect } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { javascript } from '@codemirror/lang-javascript'
-import { ivacState } from '@/state/ivacState'
+import { ivacState } from '@/state/customerState'
 import toast from 'react-hot-toast'
 export default function IvacCodePage() {
   const { ivacCode, getIvacCode, ivacCodeOnChange, saveIvacCode } = ivacState();
