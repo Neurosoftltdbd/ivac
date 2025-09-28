@@ -23,6 +23,12 @@ export const CustomerState = create((set) => ({
         set({ customerList: response.data.data })
         return response.data;
     },
+    customerData: {},
+    getCustomerById: async (id) => {
+        const response = await axios.get(`/api/v2/customer/${id}`);
+        set({ customerData: response.data.data });
+        return response.data;
+    }
 
 
 

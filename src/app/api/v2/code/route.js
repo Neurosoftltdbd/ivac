@@ -8,9 +8,9 @@ import { NextResponse } from "next/server";
 export async function GET() {
     try {
         if (await isAdmin()) {
-            const code = await prisma.ivacPanelCode.findFirst({include: { user: { select: { id: true, name: true, email: true, role: true } }} });
+            const code = await prisma.ivacPanelCode.findFirst({ include: { user: { select: { id: true, name: true, email: true, role: true } } } });
             return NextResponse.json({ status: "success", message: "code fetched successfully", data: code });
-        }else{
+        } else {
             return NextResponse.json({ status: "unauthorized", message: "Unauthorized access" });
         };
     } catch (error) {
@@ -29,15 +29,24 @@ export async function PUT(req) {
 
         reqBody.obsfucatedCode = obfuscateJsCode(reqBody.code);
 
+        const isExisting = await prisma.ivacPanelCode.findFirst();
+
         if (await isAdmin()) {
-            const code = await prisma.ivacPanelCode.update({
-                where: { id: 1 },
-                data: { code: reqBody.code, obsfucatedCode: reqBody.obsfucatedCode, userId: reqBody.userId }
-            });
-            return NextResponse.json({ status: "success", message: "code updated successfully", data: code });
-        }else{
+            let code;
+            if (isExisting) {
+                code = await prisma.ivacPanelCode.update({
+                    where: { id: isExisting.id },
+                    data: { code: reqBody.code, obsfucatedCode: reqBody.obsfucatedCode, userId: reqBody.userId }
+                });
+            } else {
+                code = await prisma.ivacPanelCode.create({
+                    data: { code: reqBody.code, obsfucatedCode: reqBody.obsfucatedCode, userId: reqBody.userId }
+                });
+            }
+            return NextResponse.json({ status: "success", message: "code saved successfully", data: code });
+        } else {
             return NextResponse.json({ status: "unauthorized", message: "Unauthorized access" });
-        };    
+        };
     } catch (error) {
         return NextResponse.json({ status: "error", message: "Error occurred", data: error.message });
     }
