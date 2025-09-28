@@ -3,7 +3,7 @@ import React from 'react'
 import LogoutButton from '@/component/LogoutButton';
 import { isAdmin } from '@/lib/auth';
 
-export default function layout({ children }) {
+export default async function layout({ children }) {
     const sideBarLinks = [
         {name: 'Home', path: '/'},
         {name:"Ivac Customer", path:"/dashboard/ivac-customer"},
@@ -12,7 +12,7 @@ export default function layout({ children }) {
         {name: 'Settings', path: '/dashboard/settings'},
     ]
 
-    isAdmin() && sideBarLinks.push({name: 'User Management', path: '/dashboard/user-list'})
+    await isAdmin() && sideBarLinks.push({name: 'User Management', path: '/dashboard/user-list'})
 
   return (
     <div className='min-h-screen flex w-full'>

@@ -1,5 +1,6 @@
 "use client";
 import { CustomerState } from '@/state/customerState';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react'
 
@@ -67,7 +68,7 @@ export default function CustomerPage() {
                     <tbody>
 
                         {
-                            customerList.map((customer, index) => {
+                            customerList && customerList.map((customer, index) => {
                                 return (<tr key={index}>
                                     <td>{customer.id}</td>
                                     <td>{customer.name}</td>
@@ -106,14 +107,20 @@ export default function CustomerPage() {
                                         }
                                     </td>
                                     <td className='text-center'>
-                                        <button className='bg-green-500 text-white rounded px-2 py-1 mr-2 hover:bg-green-600 cursor-pointer'><i className='bi bi-pencil'></i></button>
+                                        {/* <button className='bg-green-500 text-white rounded px-2 py-1 mr-2 hover:bg-green-600 cursor-pointer'><i className='bi bi-pencil'></i></button>
                                         <button className='bg-red-500 text-white rounded px-2 py-1 mr-2 hover:bg-red-600 cursor-pointer'><i className='bi bi-trash'></i></button>
+                                     */}
+                                        <button className='bg-blue-500 text-white rounded px-2 py-1 mr-2 hover:bg-blue-600 cursor-pointer'>
+                                            <Link href={`/dashboard/ivac-customer/${customer.id}`}>
+                                                <i className='bi bi-eye'></i>
+                                            </Link>
+                                        </button>
                                     </td>
 
                                 </tr>)
                             })
                         }
-                        
+
 
                     </tbody>
                 </table>

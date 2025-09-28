@@ -1,5 +1,4 @@
 import { isAdmin } from "@/lib/auth";
-import { decodeToken } from "@/lib/jwt";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -44,8 +43,8 @@ export async function GET() {
     try {
         if (isAdmin()) {
             const data = await prisma.ivacCustomer.findMany({
-                include: { user: { select: { id: true, name: true, email: true } } },
-                include: { device: true },
+                include: { user: { select: { id: true, name: true, email: true, role: true } } },
+                include: { device: { select: { deviceId: true, status: true } } },
                 orderBy: {
                     id: 'desc'
                 }

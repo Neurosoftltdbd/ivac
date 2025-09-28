@@ -58,8 +58,8 @@ model IvacCustomer {
   mobile    String?
   address   String?
   status    EnumStatus @default(active)
-  userId    Int?
-  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id])
   device    DeviceList[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

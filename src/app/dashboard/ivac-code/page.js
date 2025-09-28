@@ -5,7 +5,7 @@ import { javascript } from '@codemirror/lang-javascript'
 import toast from 'react-hot-toast'
 import { ivacCodeState } from '@/state/ivacCodeState'
 export default function IvacCodePage() {
-  const { ivacCode, getIvacCode, ivacCodeOnChange, saveIvacCode } = ivacCodeState();
+  const { ivacCode, getIvacCode, ivacCodeOnChange, saveIvacCode, ivacCodeResponse } = ivacCodeState();
 
   useEffect(() => {
     (async () => {
@@ -26,12 +26,13 @@ export default function IvacCodePage() {
   return (
     <>
       <h1 className='text-3xl font-bold text-gray-800'>Ivac Code</h1>
-      <div className='my-3'>
+      <p className='text-gray-600'>Edit the Ivac code below.</p>
+      <div className='my-3 overflow-hidden'>
         <CodeMirror
           value={ivacCode}
           height="80vh"
-          width='100%'
-          maxWidth='80vw'
+          width='90vw'
+          maxWidth='1600px'
           autoSave='true'
           lang='javascript'
           className='rounded p-2'
@@ -71,7 +72,10 @@ export default function IvacCodePage() {
           onChange={ivacCodeOnChange}
           theme="dark"
         />
+        <div className='flex justify-between items-center'>
         <button onClick={handleSave} className='bg-green-500 text-white rounded px-4 py-2 hover:bg-green-600 mt-3 cursor-pointer'>Save Code</button>
+          {ivacCodeResponse && <p className='mt-2 text-sm text-gray-500'>Last updated by: {ivacCodeResponse.data?.user?.role} ( {ivacCodeResponse.data?.user?.name} - {ivacCodeResponse.data?.user?.email})</p>}
+        </div>
       </div>
     </>
   )

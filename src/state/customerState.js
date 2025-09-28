@@ -1,5 +1,4 @@
 import axios from "axios";
-import { use } from "react";
 import { create } from "zustand";
 
 export const CustomerState = create((set) => ({

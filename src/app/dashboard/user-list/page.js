@@ -36,7 +36,7 @@ export default function UserListPage() {
                 </thead>
                 <tbody className=''>
                     {
-                        isAdmin && userList.map((user, index) => {
+                        isAdmin() && userList && userList.map((user, index) => {
                             return (
                                 <tr key={index} className='border-b border-gray-300 hover:bg-gray-100 py-2'>
                                     <td>{user.name}</td>
