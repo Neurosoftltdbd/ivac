@@ -2,7 +2,7 @@
 import { CustomerState } from '@/state/customerState';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 
 export default function CustomerPage() {
     const router = useRouter();
@@ -14,7 +14,7 @@ export default function CustomerPage() {
         })()
     }, []);
 
-    console.log(customerList);
+    console.log("customerList", customerList.length);
 
 
 
@@ -50,7 +50,7 @@ export default function CustomerPage() {
                 </div>
             </div>
             <hr />
-            <div className='mt-4 h-[80vh] overflow-auto'>
+            <div className='mt-4 h-[70vh] overflow-auto'>
                 <table className='min-w-full border border-gray-300'>
                     <thead className='bg-gray-200'>
                         <tr>
@@ -66,8 +66,8 @@ export default function CustomerPage() {
                         </tr>
                     </thead>
                     <tbody>
-
-                        {
+                        <Suspense fallback={<tr className='text-center'><td className='border border-gray-300 px-4 py-2'>Loading...</td></tr>}>
+                            {
                             customerList && customerList.map((customer, index) => {
                                 return (<tr key={index}>
                                     <td>{customer.id}</td>
@@ -120,8 +120,7 @@ export default function CustomerPage() {
                                 </tr>)
                             })
                         }
-
-
+                        </Suspense>
                     </tbody>
                 </table>
             </div>

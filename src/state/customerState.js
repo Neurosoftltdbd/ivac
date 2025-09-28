@@ -1,4 +1,3 @@
-import axios from "axios";
 import { create } from "zustand";
 
 export const CustomerState = create((set) => ({
@@ -13,21 +12,25 @@ export const CustomerState = create((set) => ({
     },
     customerList: [],
     createCustomer: async (customerData) => {
-        const response = await axios.post('/api/v2/customer', customerData);
-        set({customerList:response.data.data })
-        return response.data;
+        const response = await fetch('/api/v2/customer', {method: 'POST', body: JSON.stringify(customerData)});
+        const data = await response.json();
+        set({customerList: data.data });
+        return data;
     },
     getCustomerList: async () => {
         set({ customerList: [] });
-        const response = await axios.get('/api/v2/customer');
-        set({ customerList: response.data.data })
-        return response.data;
+        //const response = await axios.get('/api/v2/customer');
+        const response = await fetch('/api/v2/customer', {method: 'GET'});
+        const data = await response.json();
+        set({ customerList: data.data });
+        return data;
     },
     customerData: {},
     getCustomerById: async (id) => {
-        const response = await axios.get(`/api/v2/customer/${id}`);
-        set({ customerData: response.data.data });
-        return response.data;
+        const response = await fetch(`/api/v2/customer/${id}`, {method: 'GET'});
+        const data = await response.json();
+        set({ customerData: data.data });
+        return data;
     }
 
 

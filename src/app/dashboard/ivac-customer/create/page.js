@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 
 export default function CreateCustomerPage() {
     const router = useRouter();
-    const { customerForm, customerFormOnChange, createCustomer } = CustomerState();
+    const { customerForm, customerFormOnChange, createCustomer, getCustomerList } = CustomerState();
 
     const handleCreateCustomer = async () => {
         if(!customerForm.name || !customerForm.email || !customerForm.mobile || !customerForm.address){
@@ -21,6 +21,7 @@ export default function CreateCustomerPage() {
             customerFormOnChange('mobile', '');
             customerFormOnChange('address', '');
             customerFormOnChange('status', 'active');
+            await getCustomerList();
             router.push('/dashboard/ivac-customer');
         } else {
             toast.error(response.message);
@@ -57,7 +58,7 @@ export default function CreateCustomerPage() {
                         <option value='inactive'>Inactive</option>
                     </select>
                 </div>
-                <button onClick={handleCreateCustomer} className='bg-blue-500 text-white rounded px-4 py-2 hover:bg-blue-600'>Create Customer</button>
+                <button onClick={handleCreateCustomer} className='bg-blue-500 text-white rounded px-4 py-2 hover:bg-blue-600 cursor-pointer'>Create Customer</button>
                 
             </div>
         </div>

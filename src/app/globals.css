@@ -20,6 +20,11 @@ table > tbody > tr > td{
 table > tbody > tr:hover {
   background-color: #f9fafb; /* Tailwind's gray-50 */
 }
+table > tbody > tr > th {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
 button {
   transition: background-color 0.5s ease;
 }

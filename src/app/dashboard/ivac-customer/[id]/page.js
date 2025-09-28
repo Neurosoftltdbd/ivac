@@ -2,6 +2,7 @@
 import { useParams } from 'next/navigation'
 import { CustomerState } from '@/state/customerState'
 import { useEffect } from 'react';
+import { date } from 'zod';
 
 export default function CustomerDetailsPage() {
     const { id } = useParams()
@@ -25,19 +26,53 @@ export default function CustomerDetailsPage() {
         <div>
             <h1 className='text-3xl font-bold text-gray-800 py-3'>Customer Details</h1>
             <div className='bg-white p-6 rounded shadow-md'>
-                <p><span className='font-semibold'>ID:</span> {customerData.id}</p>
-                <p><span className='font-semibold'>Name:</span> {customerData.name}</p>
-                <p><span className='font-semibold'>Email:</span> {customerData.email}</p>
-                <p><span className='font-semibold'>Mobile:</span> {customerData.mobile}</p>
-                <p><span className='font-semibold'>Address:</span> {customerData.address}</p>
-                <p><span className='font-semibold'>Status:</span> {customerData.status}</p>
-                <p><span className='font-semibold'>Created At:</span> {new Date(customerData.createdAt).toLocaleString()}</p>
-                <p><span className='font-semibold'>Updated At:</span> {new Date(customerData.updatedAt).toLocaleString()}</p>
+                <div>
+                    <table className='table-auto border border-gray-300'>
+                        <tbody>
+                        <tr>
+                            <th>ID:</th>
+                            <td>{customerData.id}</td>
+                        </tr>
+                        <tr>
+                            <th>Name:</th>
+                            <td>{customerData.name}</td>
+                        </tr>
+                        <tr>
+                            <th>Email:</th>
+                            <td>{customerData.email}</td>
+                        </tr>
+                        <tr>
+                            <th>Mobile:</th>
+                            <td>{customerData.mobile}</td>
+                        </tr>
+                        <tr>
+                            <th>Address:</th>
+                            <td>{customerData.address}</td>
+                        </tr>
+                        <tr>
+                            <th>Device:</th>
+                            <td>{customerData.device?.length || 0}</td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>{customerData.status}</td>
+                        </tr>
+                        <tr>
+                            <th>Created At:</th>
+                            <td>{new Date(customerData.createdAt).toLocaleString()}</td>
+                        </tr>
+                        <tr>
+                            <th>Updated At:</th>
+                            <td>{new Date(customerData.updatedAt).toLocaleString()}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
                 <div>
                     <h2 className='text-2xl font-bold text-gray-800 py-3 mt-4'>Associated Devices</h2>
                     <div>
                         <table className='min-w-full border border-gray-300'>
-                            <thead>
+                            <thead className='bg-gray-200'>
                                 <tr>
                                     <th>ID</th>
                                     <th>Device ID</th>

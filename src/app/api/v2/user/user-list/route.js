@@ -6,7 +6,7 @@ export async function GET() {
     try {
         if (await isAdmin()) {
             const users = await prisma.user.findMany();
-            console.log('Fetched users:', users);
+            //console.log('Fetched users:', users);
             return NextResponse.json({ status: "success", message: "User list fetched successfully", data: users });
         }else{
             return NextResponse.json({ status: "unauthorized", message: "Unauthorized" });

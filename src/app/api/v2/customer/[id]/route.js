@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(request, { params }) {
     try {
-        const { id } = params;
+        const { id } = await params;
         const customerId = parseInt(id);
         const customer = await prisma.ivacCustomer.findUnique({
             where: { id: customerId },
