@@ -1,11 +1,10 @@
 "use client"
-import React from 'react'
 import userState from "@/state/userState";
 import {useEffect} from "react";
 import {toast} from "react-hot-toast";
 import { isAdmin } from '@/lib/utility';
 import Link from 'next/link';
-export default function page() {
+export default function ProfilePage() {
     const {profileRead, profileData, profileUpdate, userFormOnChange, userForm} = userState();
     useEffect(()=>{
         (async ()=>{

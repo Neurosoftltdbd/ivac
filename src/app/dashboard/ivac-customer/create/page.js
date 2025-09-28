@@ -1,11 +1,10 @@
 "use client"
-import React from 'react'
 import { useRouter } from 'next/navigation';
 import { CustomerState } from '@/state/customerState';
 import toast from 'react-hot-toast';
 
 
-export default function page() {
+export default function CreateCustomerPage() {
     const router = useRouter();
     const { customerForm, customerFormOnChange, createCustomer } = CustomerState();
 
@@ -30,7 +29,7 @@ export default function page() {
 
 
   return (
-    <>
+    <div>
         <h1 className='text-3xl font-bold text-gray-800'>Create Ivac Customer</h1>
         <p className='text-gray-600'>This is the page where you can create a new Ivac customer.</p>
         <div>
@@ -62,6 +61,6 @@ export default function page() {
                 
             </div>
         </div>
-    </>
+    </div>
   )
 }

@@ -1,9 +1,9 @@
 "use client";
 import { CustomerState } from '@/state/customerState';
 import { useRouter } from 'next/navigation';
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 
-export default function page() {
+export default function CustomerPage() {
     const router = useRouter();
 
     const { getCustomerList, customerList } = CustomerState();
@@ -17,39 +17,7 @@ export default function page() {
 
 
 
-    let [ivacUsers, setIvacUsers] = React.useState([
-        {
-            id: 1, name: 'John Doe', email: 'user@ivacbd.com', role: 'Admin', status: 'Active', device: [
-                { status: "Active", deviceId: "2233" }, { status: "Inactive", deviceId: "3343sddf" }
-            ]
-        },
-        { id: 2, name: 'Jane Smith', email: '   ', role: 'User', status: 'Inactive', device: [] },
-        {
-            id: 3, name: 'Alice Johnson', email: '    ', role: 'User', status: 'Active', device: [
-                { status: "Active", deviceId: "2233" }, { status: "Inactive", deviceId: "3343sddf" }
-            ]
-        },
-        {
-            id: 4, name: 'Bob Brown', email: '   ', role: 'User', status: 'Active', device: [
-                { status: "Active", deviceId: "2233" }, {
-                    status: "Inactive", deviceId: "3343sddf"
-                }]
-        },
-    ]);
 
-
-    // let ivacUsers = [
-    //     { id: 1, name: 'John Doe', email: 'user@ivacbd.com', role: 'Admin', status: 'Active', device: [
-    //         {status:"Active", deviceId:"2233"}, {status:"Inactive", deviceId:"3343sddf"}
-    //     ] },
-    //     { id: 2, name: 'Jane Smith', email: '   ', role: 'User', status: 'Inactive', device: [] },
-    //     { id: 3, name: 'Alice Johnson', email: '    ', role: 'User', status: 'Active', device: [
-    //         {status:"Active", deviceId:"2233"}, {status:"Inactive", deviceId:"3343sddf"}
-    //     ] },
-    //     { id: 4, name: 'Bob Brown', email: '   ', role: 'User', status: 'Active', device: [
-    //         {status:"Active", deviceId:"2233"}, {status:"Inactive", deviceId:"3343sddf"
-    //     }] },
-    // ];
 
     const handleCustomerStatusToggle = (userId, deviceId) => {
         const updatedUsers = ivacUsers.map((user) => {
